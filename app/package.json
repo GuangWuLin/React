@@ -6,6 +6,8 @@
     "start": "electron ."
   },
   "devDependencies": {
+    "babel-preset-react": "^6.16.0",
+    "webpack":"^1.13.3",
     "electron-prebuilt": "^1.4.10"
   },
   "dependencies": {

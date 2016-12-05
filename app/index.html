@@ -3,21 +3,109 @@
 		<title>myApp</title>
 		 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
     	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />	
-	    <!--<script src="../thr/js/JSXTransformer.js"></script>-->
+	    <script src="../thr/js/JSXTransformer.js"></script>
 	    <script src="../thr/js/jquery.min.js"></script>
-	    <!--<script src="../thr/js/react.js"></script>
-		<script src="../thr/js/react-dom.js"></script>-->
-	    <!--<script src="../thr/js/browser.min.js"></script>-->
+	    <script src="../thr/js/react.js"></script>
+		<script src="../thr/js/react-dom.js"></script>
+	    <script src="../thr/js/browser.min.js"></script>
 	    <!-- The core React library -->
-	    <link rel="stylesheet" type="text/css" href=".index.css"/>
+	    <link rel="stylesheet" type="text/css" href="./index.css"/>
 	</head>
 	<body>
 		<div id="example">
 			Loading....
 		</div>
-		<!--<script type="text/babel">
-			import { Input } from 'rctui';
-			ReactDOM.render(<Input value='1111'/>,document.getElementById('example'));
-		</script>-->
+		<script type="text/jsx">
+			var user = [
+			{'acount':'111','name':'a','password':'123','sex':'male'},
+			{'acount':'222','name':'b','password':'123','sex':'female'},
+			{'acount':'333','name':'c','password':'123','sex':'male'}
+			];
+
+			//var what = '';
+			//isLogin?what='密码':what='账号'
+			// 头像组件
+
+			var HeadImgComponent = React.createClass({
+				getInitialState:function(){
+					return {isLogin:false,sex:'unkown'}
+				},
+				handleClick : function(){
+					console.warn(2222)
+					this.setState({isLogin:false,sex:'unkown'})
+				},
+				render:function(){
+					return <img onClick={this.handleClick} src={`../thr/img/${this.state.sex}.jpg`} />
+				}
+			});
+
+			// 输入框组件
+			var EnterComponent = React.createClass({
+				getInitialState:function(){
+					return {isLogin:false,what:'账号'}
+				},
+				render:function(){
+					return <input type='text' placeholder={请输入`${what}`} />
+				}
+			});
+
+			// 用户信息 
+			var APP = React.createClass({
+				getInitialState: function() {
+				    return {isLogin: false,userName:'',sex:'unkown'};
+				},
+				handleClick:function(e){
+					
+					var e = e || event;
+					var node = e.keyCode;
+					node === 13?(()=>{
+						console.log('yes')
+
+						user.map((name)=>{
+							//console.log(name.name)
+							if(!this.state.isLogin){
+								name.acount === this.refs.input.value?(()=>{
+									console.log(name.name )
+									// 正确账号提示输入密码  并渲染头像与名字
+						
+					    			this.setState({isLogin: true,userName:name.name,sex:name.sex});
+
+									this.refs.input.value='';
+									
+								})():console.log('No matched')
+							
+							}else{
+								console.log(name.password)
+								name.password === this.refs.input.value?(()=>{
+								console.log('密码正确')
+								})():alert('密码错误')
+							}
+						})
+					})():console.log('not enter key')
+
+				},
+				handleChange:function(){
+					// 点击之后 切换账号 即 回退到输入账号界面
+					this.refs.input.value=''
+					this.setState({isLogin:false,userName:'',sex:'unkown'})
+					console.log('hello')
+				},
+				render:function(){
+					return (
+						<div className="acountEnter">
+							<HeadImgComponent  />
+							{
+								this.state.isLogin?<span style={{textAlign:'center',color:'white'}}>{this.state.userName}</span>:console.log(3333)
+							}
+							<EnterComponent	/>					
+						</div>
+					)
+				}
+				
+			})
+			const ipcRenderer = require('electron').ipcRenderer;
+			// ipcRenderer.send('sayHi')
+			ReactDOM.render(<APP></APP>,document.getElementById('example'));
+		</script>
 	</body>
 </html>

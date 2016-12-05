@@ -1,11 +1,12 @@
 //import React from 'react';
 //require('rctui');
 //import ReactDOM from  'react-dom';
-//import { Router, Route, hashHistory} from "react-router";
-//import Home  from '../components/HelloWorld.js';
-//import login  from '../components/login.js';
-//import content  from '../components/content.js';
-//import userSetting  from '../components/userSetting.js';
+// import { Router, Route, hashHistory} from "react-router";
+const React = require('react')
+const Router = require('react-router');
+const Route = require('react-router');
+const hashHistory = require('react-router');
+
 const electron = require('electron');
 // Module to control application life.
 const {app} = electron;
@@ -15,19 +16,6 @@ const {Menu, Tray} = require('electron')
 const MenuItem = electron.MenuItem
 const path = require('path')
 const ipcMain = require('electron').ipcMain;
-//class App extends React.Component{
-//	render(){
-//		return(
-//			<Router history={hashHistory}>
-//  			<Route path="/" component={Home} />
-//  			<Route path="/login" component={login} />
-//  			<Route path="/content" component={content} />
-//  			<Route path="/userSetting" component={userSetting} />
-//			</Router>
-//		);
-//	}
-//}
-//ReactDOM.render(<App />, document.querySelector("#example"));
 
 let win;
 let tray;
@@ -59,12 +47,8 @@ function createWindow() {
 // Create the browser window.创建一个新的浏览器窗口
 win = new BrowserWindow({width: 705, height: 525});
 	
-tray = new Tray(path.join(__dirname, '../thr/img/app.png'))
-//const menu = new Menu();
-//menu.append(new MenuItem({ label: '首页', type: 'checkbox', checked: true }))
-//menu.append(new MenuItem({ label: '注销', type: 'checkbox', checked: false }))
-//menu.append(new MenuItem({ label: '设置', type: 'checkbox', checked: false }))
-//menu.append(new MenuItem({ label: '退出', type: 'checkbox', checked: false }))
+tray = new Tray(path.join(__dirname, '../thr/img/1.png'))
+
 const contextMenu = Menu.buildFromTemplate([{label: '主界面',type:'radio',checked:true,click:function(){
                                    	console.log(111111111)
                                    }},
@@ -96,4 +80,8 @@ win.on('closed', () => {
 }
 ipcMain.on('close-main-window',function(){
 	app.quit();
+})
+
+ipcMain.on('sayHi',function(){
+  console.log('Hi')
 })
