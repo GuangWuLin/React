@@ -1,5 +1,7 @@
 html {
   font-size: 14px;
+  position: relative;
+
 }
 .acountEnter{
 	display: flex;
@@ -18,11 +20,56 @@ img{
 }
 input{
 	display: flex;
-	margin-top: 5%;
 	height: 2rem;
-	border-radius: 15px;
+	border-radius: 5px;
+	box-shadow: grey 1px 4px 5px;
 	align-self: center;
 	width: 50%;
+}
+#tips{
+	display: none;
+	position: absolute;
+	width: 230px;
+	height: 100px;
+	background: #a98a51;
+}
+.imagetable {
+	font-family: verdana,arial,sans-serif;
+	margin: 2px auto;
+	width: 100%;
+	height: 40%;
+	text-align: center;
+
+	font-size:15px;
+	color:#333333;
+	border: 1px;
+	border-width: 1px;
+	border-color: #999999;
+	border-collapse: collapse;
+}
+.HighLight:hover{
+	color: red;
+	cursor:pointer;
+}
+th {
+	background: url('../thr/img/cell-blue.jpg');
+	border-width: 1px;
+	padding: 8px;
+	border-style: solid;
+	border-color: #999999;
+}
+td {
+
+	background: url('../thr/img/cell-grey.jpg');
+	border-width: 2px;
+	padding: 8px;
+	border-style: solid;
+	border-color: #999999;
+	box-shadow: orange 1px 2px 3px;
+}
+.todo_{
+	background-color: rgba(29, 47, 5, 0.64);
+	color:white;
 }
 /*button{
 	width: 40px;
