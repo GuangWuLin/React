@@ -17,10 +17,21 @@
 		</div>
 		<div id="tips"></div>
 		<script type="text/jsx">
+			var CashTo3 = function(str){
+				let len = str.length, str2 = '', max = Math.floor(len / 3); 
+				for(var i = 0 ; i < max ; i++){ 
+					let s = str.slice(len - 3, len); 
+					str = str.substr(0, len - 3); 
+					str2 = (',' + s) + str2; 
+					len = str.length; 
+				} 
+				str += str2; 
+				return str;
+			}
 			var users = [
-				{'acount':'111','name':'吕布','password':'123','sex':'male'},
-				{'acount':'222','name':'昭君','password':'123','sex':'female'},
-				{'acount':'333','name':'白起','password':'123','sex':'male'}
+				{'acount':'111','name':'鼬','password':'123','sex':'male'},
+				{'acount':'222','name':'雏田','password':'123','sex':'female'},
+				{'acount':'333','name':'佐助','password':'123','sex':'male'}
 			];
 			var stodoLists = [
 				{no:"1",accountdate:"2015-11-23",pro:"购置安装费",cause:"刘某付购置安检设备",amount:"10,797,887.00",creater:"刘某"},
@@ -52,38 +63,45 @@
 			var EnterComponent = React.createClass({
 				getInitialState:function(){
 					//console.info(this.props.isLogin)
-					return {isLogin:this.props.isLogin,userName:''}
+					return {isLogin:this.props.isLogin,userName:'',password:''}
 				},
 				changeType:function(e){
+					var noAcount = 0;
 					var nodeKey = e.keyCode
-					if(nodeKey === 13){
-
+					if(nodeKey === 13 && !this.props.flag){
 						for(var i=0;i < users.length;i++){
 							if(!this.props.isLogin){
 								if(users[i].acount === this.refs.myInput.value){
 									var newLogin = [!this.props.isLogin,users[i].name,users[i].sex]
-									this.setState({isLogin:newLogin,userName:users[i].name,sex:users[i].sex})
+									this.setState({isLogin:newLogin,userName:users[i].name,sex:users[i].sex,password:users[i].password})
 									//console.error(users[i].sex)
 									this.props.callbackParent(newLogin)
 									this.refs.myInput.value = ''
 									return
 								}else{
-									console.warn('Acount not exsists')	
+									++noAcount;
+									noAcount>= 3 && alert('Acount not exsists')	
 								}
 							}else{
-								if(users[i].password === this.refs.myInput.value){
-									console.log('密码正确')
+								//console.warn(this.state.password)
+								if(this.state.password === this.refs.myInput.value){
+									//console.log('密码正确')
 									this.refs.myInput.value = ''
-									document.title = `消息助手-当前用户: ( ${users[i].name} )`
+									//console.info(this.state.userName)
+									document.title = `消息助手-当前用户: ( ${this.state.userName} )`
+									//console.info(this.props.isLogin)
+									var newFlag = [true,this.props.isLogin];
+									this.props.oncallback1(newFlag)
 									return;
 								}else{
-									console.warn('密码错误')
+									alert('密码错误')
 								}
 							}
 						}
 					}
 				},
 				render:function(){
+					var flag = this.props.flag
 					var isLogin = this.props.isLogin
 					//console.log('aaaaaaaaaaaaaa'+isLogin+'zzzzzzzzzzzzzz')
 					var what = !isLogin?'请输入账号':'请输入密码';
@@ -106,15 +124,19 @@
 				    sex:newLogin[2]
 				  });
 				},
+				onChangeFlag(newFlag){
+					this.props.oncallback(newFlag);
+				},
 				render:function(){
 					var amLogin = this.state.userName
 					var sex = this.state.sex
-					//console.log(sex)
+					var flag = this.props.flag;
+					//console.warn(flag)
 					return (
 						<div className="acountEnter">
 							<HeadImgComponent isLogin={this.state.isLogin} callbackParent={this.onChildChanged} sex={sex}/>
 							<p style={{color:'white',textAlign:'center',fontSize:'25px'}}>{amLogin}</p>
-							<EnterComponent	isLogin={this.state.isLogin} callbackParent={this.onChildChanged}/>					
+							<EnterComponent isLogin={this.state.isLogin} callbackParent={this.onChildChanged} flag = {flag} oncallback1={this.onChangeFlag}/>
 						</div>
 					)
 				}
@@ -127,8 +149,14 @@
 					this.props.stodos.forEach(c=>{
 						totalCount += 1*(c.amount.replace(/\,/g,''));
 					});
+					totalCount += '';
+					
+					//console.info(typeof totalCount)
+					
+					totalCount = CashTo3(totalCount);
+					//console.log(typeof totalCount)
 					return (
-						<p style={{textAlign:'right'}}>总计：{totalCount}￥</p>
+						<p style={{textAlign:'right'}}>总计:&nbsp;￥ {totalCount}</p>
 					)
 				}
 			}) 
@@ -138,7 +166,6 @@
 				getInitialState:function(){
 					return {stodo:this.props.stodos}
 				},
-				
 				render:function(){
 					var todolist = [];
 					this.state.stodo.forEach((todo,index)=>{
@@ -165,14 +192,16 @@
 			// 表单行 组件
 			var Todo = React.createClass({
 				showMeSomething:function(e){
+					
 					var text = e.target.parentNode.innerText;
 					var node = text.replace(/\s/g,'+').split('+')	
 					var oDiv = document.querySelector('#tips');
 				    oDiv.innerText = `编号 -> ${node[0]} \n 日期 -> ${node[1]} \n事项 -> ${node[2]} \n事由 -> ${node[3]} \n金额 -> ${node[4]} \n操作手 -> ${node[5]}`;
-					oDiv.style.left = e.ClientX + 'px'
-					oDiv.style.top = e.ClientY + 'px'
+					oDiv.style.left = e.clientX + 'px'
+					oDiv.style.top = e.clientY + 'px'
 					oDiv.style.display = 'block'
-					console.log(oDiv)
+					//console.log(oDiv)
+					//console.info(e.clientX)
 				},
 				hideMeMessage:function(){
 					document.querySelector('#tips').style.display = 'none'
@@ -180,12 +209,12 @@
 		        render: function() {
 		          return (
 		                <tr onMouseOver={this.showMeSomething} onMouseLeave={this.hideMeMessage} className="HighLight">
-							<td>{this.props.todo.no}</td>
-							<td>{this.props.todo.accountdate}</td>
-							<td>{this.props.todo.pro}</td>
-							<td>{this.props.todo.cause}</td>
-							<td>{this.props.todo.amount}</td>
-							<td>{this.props.todo.creater}</td>
+							<td className='left'>{this.props.todo.no}</td>
+							<td className='left'>{this.props.todo.accountdate}</td>
+							<td className='left'>{this.props.todo.pro}</td>
+							<td className='left'>{this.props.todo.cause}</td>
+							<td className='right'>{this.props.todo.amount}</td>
+							<td >{this.props.todo.creater}</td>
 						</tr>
 		            );
 		        }
@@ -215,36 +244,41 @@
 				}
 			})
 
-			// 自动启动组件 ?
-			var AutoLaunchComponent = React.createClass({
+			// 大包装
+			var App = React.createClass({
+				getInitialState:function(){
+					return {flag:false,isLogin:false}
+				},
+				changeFlag:function(newFlag){
+					this.setState({flag:newFlag[0],isLogin:newFlag[1]})
+				},
 				render:function(){
-					return <p></p>
-				}
-			})
-
-			// 保存密码组件
-			var SavePswComponent = React.createClass({
-				render:function(){
-					return <p></p>
-				}
-			})
-
-			// 自动锁定组件
-			var AutoLockComponent = React.createClass({
-				render:function(){
-					return <p></p>
-				}
-			})
-			// 用户设置组件
-			var UserSettingComponent = React.createClass({
-				render:function(){
-					return <p></p>
+					var isLogin = this.state.isLogin;
+					//console.error(isLogin)
+					// 渲染进程（响应） -> 进入主页
+					ipcRenderer.on('HelloMan',()=>{
+						//  必须在已经登录的状态才能进入主页
+						this.state.isLogin && this.setState({flag:true})
+						this.state.isLogin || alert('Please login first')
+					});
+					// 渲染进程（响应）-> 注销
+					ipcRenderer.on('sayWhat',()=>{
+						this.setState({flag:false,isLogin:false})
+					});
+					//console.log(this.state.userName+'11111111111')
+					var tmp = this.state.flag?<ContentComponent todoLists={stodoLists}/>: <LoginComponent flag={this.state.flag} oncallback={this.changeFlag}/>
+					return (
+						<div>{tmp}</div>
+					)
 				}
 			})
 
 			const ipcRenderer = require('electron').ipcRenderer;
-			// ipcRenderer.send('sayHi')
-			ReactDOM.render(<ContentComponent todoLists={stodoLists} />,document.getElementById('example'));
+			
+			ReactDOM.render(
+				<App />
+				,document.getElementById('example')
+			);
 		</script>
 	</body>
 </html>

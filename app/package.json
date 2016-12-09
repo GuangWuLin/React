@@ -4,7 +4,8 @@
   "main": "./main.js",
   "scripts": {
     "start": "electron ."
-  },
+  }
+  ,
   "devDependencies": {
     "babel-preset-react": "^6.16.0",
     "webpack":"^1.13.3",

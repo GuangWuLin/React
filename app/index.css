@@ -1,7 +1,7 @@
 html {
   font-size: 14px;
   position: relative;
-
+  overflow: hidden;
 }
 .acountEnter{
 	display: flex;
@@ -9,6 +9,12 @@ html {
 	height: 100%;
 	flex-flow: column;
 	background: #0a2938;
+}
+.left{
+	text-align: left;
+}
+.right{
+	text-align: right;
 }
 img{
 	display: flex;
@@ -29,8 +35,10 @@ input{
 #tips{
 	display: none;
 	position: absolute;
+	z-index: 2;
 	width: 230px;
 	height: 100px;
+	border-radius: 6px;
 	background: #a98a51;
 }
 .imagetable {

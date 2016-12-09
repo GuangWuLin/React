@@ -44,40 +44,38 @@ app.on('activate', () => {
 
 
 function createWindow() {
-// Create the browser window.创建一个新的浏览器窗口
-win = new BrowserWindow({width: 705, height: 525});
-	
-tray = new Tray(path.join(__dirname, '../thr/img/1.png'))
+  // Create the browser window.创建一个新的浏览器窗口
+  win = new BrowserWindow({width: 705, height: 525});
+  	
+  tray = new Tray(path.join(__dirname, '../thr/img/1.png'))
 
-const contextMenu = Menu.buildFromTemplate([{label: '主界面',type:'radio',checked:true,click:function(){
-                                   	console.log(111111111)
-                                   }},
-                                   {label: '注销',type:'radio',click:function(){
-                                   	console.log(111111111)
-                                   }},
-                                   {label: '设置',type:'radio',click:function(){
-                                   	console.log(111111111)
-                                   }},
-                                   {label: '退出',type:'radio',click:()=>{
-                                   	win.close(); //关闭窗口
-                                   }}])
-tray.setToolTip('消息助手（刘某）：暂无待办事项')
-tray.setContextMenu(contextMenu);
-// 并且装载应用的index.html
-win.loadURL(`file://${__dirname}/index.html`);
+  const contextMenu = Menu.buildFromTemplate(
+      [
+        {label: '主界面',checked:true,click:()=>{win.webContents.send('HelloMan')}},
+        {label: '注销',click:()=>{win.webContents.send('sayWhat')}},
+        {label: '设置',click:()=>{console.log(111111111)}},
+        {label: '退出',click:()=>{win.close()}} // 退出
+      ]
+    );
 
-// 打开开发者工具页面(屏蔽)
-//win.webContents.openDevTools();
+  tray.setToolTip('消息助手（刘某）：暂无待办事项')
+  tray.setContextMenu(contextMenu);
+  // 并且装载应用的index.html
+  win.loadURL(`file://${__dirname}/index.html`);
 
-// 当窗口关闭时调用的方法
-win.on('closed', () => {
-		console.log('Hehe')
-    // 解除窗口对象的引用，通常而言如果应用支持多个窗口的话，你会在一个数组里
-    //存放窗口对象，在窗口关闭的时候
-    // 应当删除相应的元素。
-    win = null;
-});
+  // 打开开发者工具页面(屏蔽)
+  //win.webContents.openDevTools();
+
+  // 当窗口关闭时调用的方法
+  win.on('closed', () => {
+  		console.log('Hehe')
+      // 解除窗口对象的引用，通常而言如果应用支持多个窗口的话，你会在一个数组里
+      //存放窗口对象，在窗口关闭的时候
+      // 应当删除相应的元素。
+      win = null;
+  });
 }
+
 ipcMain.on('close-main-window',function(){
 	app.quit();
 })
