@@ -35,11 +35,11 @@ input{
 #tips{
 	display: none;
 	position: absolute;
+	font-size: 15px;
 	z-index: 2;
-	width: 230px;
-	height: 100px;
+	border: 1px solid purple;
 	border-radius: 6px;
-	background: #a98a51;
+	background: lightblue;
 }
 .imagetable {
 	font-family: verdana,arial,sans-serif;

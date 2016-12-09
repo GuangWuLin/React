@@ -16,8 +16,12 @@
 			Loading....
 		</div>
 		<div id="tips"></div>
+		<audio src="./audio/money.wav"></audio>
 		<script type="text/jsx">
-			var CashTo3 = function(str){
+			var audio = document.querySelector('audio')
+		
+		// 金额 三位数一个 逗号
+			var CashTo3 = (str)=>{
 				let len = str.length, str2 = '', max = Math.floor(len / 3); 
 				for(var i = 0 ; i < max ; i++){ 
 					let s = str.slice(len - 3, len); 
@@ -28,17 +32,38 @@
 				str += str2; 
 				return str;
 			}
+		// 定义 跨域
+			var DataFromOut = (url,params,success,error)=>{
+				var params = params || null
+				$.ajax({
+					url:url,
+					data:params,
+					dataType:'jsonp',
+					success:success,
+					error:error
+				})
+			}
+		// 伪数据 用户
 			var users = [
 				{'acount':'111','name':'鼬','password':'123','sex':'male'},
 				{'acount':'222','name':'雏田','password':'123','sex':'female'},
 				{'acount':'333','name':'佐助','password':'123','sex':'male'}
 			];
+		// 伪数据 单据
 			var stodoLists = [
 				{no:"1",accountdate:"2015-11-23",pro:"购置安装费",cause:"刘某付购置安检设备",amount:"10,797,887.00",creater:"刘某"},
 				{no:"2",accountdate:"2015-11-23",pro:"购置安装费",cause:"刘某付购置安检设备",amount:"10,000,000.00",creater:"刘某"},
 				{no:"3",accountdate:"2015-11-23",pro:"购置安装费",cause:"刘某付购置安检设备",amount:"10,000,000.00",creater:"刘某"}
 			];
-			// 头像组件
+
+		// 取数据
+			var getData = function(){
+				DataFromOut()
+				setTimeout(()=>{
+					getData()
+				},120000);
+			}
+		// 头像组件
 
 			var HeadImgComponent = React.createClass({
 				getInitialState:function(){
@@ -47,9 +72,8 @@
 				handleClick : function(){
 					var newLogin = false
 					this.setState({isLogin:newLogin});
+					document.title = '消息助手'
 					this.props.callbackParent(newLogin)
-					
-					//console.warn(newLogin+'zzzzzzzzzzzzz'+this.state.isLogin)
 				},
 				render:function(){
 					var isLogin = this.props.isLogin
@@ -59,7 +83,7 @@
 				}
 			});
 
-			// 输入框组件
+		// 输入框组件
 			var EnterComponent = React.createClass({
 				getInitialState:function(){
 					//console.info(this.props.isLogin)
@@ -91,6 +115,7 @@
 									document.title = `消息助手-当前用户: ( ${this.state.userName} )`
 									//console.info(this.props.isLogin)
 									var newFlag = [true,this.props.isLogin];
+									localStorage.setItem('item',this.state.userName)
 									this.props.oncallback1(newFlag)
 									return;
 								}else{
@@ -112,7 +137,7 @@
 				}
 			});
 
-			// 登录组件
+		// 登录组件
 			var LoginComponent = React.createClass({
 				getInitialState: function() {
 				    return {isLogin: false,userName:'',sex:'unkown'};
@@ -142,7 +167,7 @@
 				}
 			})
 
-			// 页脚统计组件
+		// 页脚统计组件
 			var TotalCountComponent = React.createClass({
 				render:function(){
 					var totalCount = 0;
@@ -161,7 +186,7 @@
 				}
 			}) 
 
-			// 表单组件
+		// 表单组件
 			var TableComponent = React.createClass({
 				getInitialState:function(){
 					return {stodo:this.props.stodos}
@@ -189,7 +214,7 @@
 				}
 			})
 
-			// 表单行 组件
+		// 表单行 组件
 			var Todo = React.createClass({
 				showMeSomething:function(e){
 					
@@ -209,7 +234,7 @@
 		        render: function() {
 		          return (
 		                <tr onMouseOver={this.showMeSomething} onMouseLeave={this.hideMeMessage} className="HighLight">
-							<td className='left'>{this.props.todo.no}</td>
+							<td>{this.props.todo.no}</td>
 							<td className='left'>{this.props.todo.accountdate}</td>
 							<td className='left'>{this.props.todo.pro}</td>
 							<td className='left'>{this.props.todo.cause}</td>
@@ -221,7 +246,7 @@
 		    });	
 
 
-			// 选项卡（页眉）组件
+		// 选项卡（页眉）组件
 			var TodoListsComponent = React.createClass({
 				render:function(){
 					var todos = this.props.todoList
@@ -236,7 +261,7 @@
 			})
 
 
-			// 内容组件
+		// 内容组件
 			var ContentComponent = React.createClass({
 				render:function(){
 					var todoList = this.props.todoLists
@@ -244,7 +269,7 @@
 				}
 			})
 
-			// 大包装
+		// 大包装
 			var App = React.createClass({
 				getInitialState:function(){
 					return {flag:false,isLogin:false}
@@ -254,8 +279,13 @@
 				},
 				render:function(){
 					var isLogin = this.state.isLogin;
+					//console.log(localStorage.getItem('item'))
+					var user = localStorage.getItem('item')
 					//console.error(isLogin)
 					// 渲染进程（响应） -> 进入主页
+					//console.error(isLogin)
+					if(stodoLists.length >0 && isLogin) audio.play()
+					if(isLogin) ipcRenderer.send('CurrentUser',[user,stodoLists])
 					ipcRenderer.on('HelloMan',()=>{
 						//  必须在已经登录的状态才能进入主页
 						this.state.isLogin && this.setState({flag:true})
@@ -263,6 +293,8 @@
 					});
 					// 渲染进程（响应）-> 注销
 					ipcRenderer.on('sayWhat',()=>{
+						localStorage.removeItem('item')
+						document.title = '消息助手'
 						this.setState({flag:false,isLogin:false})
 					});
 					//console.log(this.state.userName+'11111111111')
@@ -272,11 +304,13 @@
 					)
 				}
 			})
-
 			const ipcRenderer = require('electron').ipcRenderer;
-			
+			ipcRenderer.send('sayHi')
 			ReactDOM.render(
-				<App />
+				<div>
+					<App />
+					
+				</div>
 				,document.getElementById('example')
 			);
 		</script>
