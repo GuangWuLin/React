@@ -2,9 +2,9 @@
 	<head>
 		<title>消息助手</title>
 		 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    	<meta http-equiv="content-type" content="text/html; charset=UTF-8" />	
+    	<meta http-equiv="content-type" content="text/html; charset=GBK" />	
+	    <script src="../thr/js/jquery.min.js" ></script>
 	    <script src="../thr/js/JSXTransformer.js"></script>
-	    <script src="../thr/js/jquery.min.js"></script>
 	    <script src="../thr/js/react.js"></script>
 		<script src="../thr/js/react-dom.js"></script>
 	    <script src="../thr/js/browser.min.js"></script>
@@ -12,6 +12,7 @@
 	    <link rel="stylesheet" type="text/css" href="./index.css"/>
 	</head>
 	<body>
+		<script>window.$ = window.jQuery = require('../thr/js/jquery.min.js');</script>
 		<div id="example">
 			Loading....
 		</div>
@@ -19,9 +20,15 @@
 		<audio src="./audio/money.wav"></audio>
 		<script type="text/jsx">
 			var audio = document.querySelector('audio')
-		
-		// 金额 三位数一个 逗号
-			var CashTo3 = (str)=>{
+			var Login = 'http://192.168.1.51:9797/todo?method=login'; //&cb=funcxx
+			var Logout = 'http://192.168.1.51:9797/todo?method=logout' // &cb=funcxx
+			var GetNews = 'http://192.168.1.51:9797/todo?method=getnew' ; //
+			var getAll = 'http://192.168.1.51:9797/todo?method=getall'; //
+			var getUser = 'http://192.168.1.51:9797/todo?method=user';
+
+
+		// 金额转 3位 一逗号模式			
+		var CashTo3 = (str)=>{
 				let len = str.length, str2 = '', max = Math.floor(len / 3); 
 				for(var i = 0 ; i < max ; i++){ 
 					let s = str.slice(len - 3, len); 
@@ -32,38 +39,43 @@
 				str += str2; 
 				return str;
 			}
-		// 定义 跨域
-			var DataFromOut = (url,params,success,error)=>{
+		// 跨域请求			
+		var DataFromOut = (url,params,success,error)=>{
 				var params = params || null
 				$.ajax({
 					url:url,
 					data:params,
+					type:'POST',
+					
 					dataType:'jsonp',
 					success:success,
 					error:error
 				})
 			}
-		// 伪数据 用户
-			var users = [
-				{'acount':'111','name':'鼬','password':'123','sex':'male'},
-				{'acount':'222','name':'雏田','password':'123','sex':'female'},
-				{'acount':'333','name':'佐助','password':'123','sex':'male'}
-			];
-		// 伪数据 单据
-			var stodoLists = [
-				{no:"1",accountdate:"2015-11-23",pro:"购置安装费",cause:"刘某付购置安检设备",amount:"10,797,887.00",creater:"刘某"},
-				{no:"2",accountdate:"2015-11-23",pro:"购置安装费",cause:"刘某付购置安检设备",amount:"10,000,000.00",creater:"刘某"},
-				{no:"3",accountdate:"2015-11-23",pro:"购置安装费",cause:"刘某付购置安检设备",amount:"10,000,000.00",creater:"刘某"}
-			];
+		// 用户
+			var users = [];
+			// {'acount':'111','name':'??','password':'123','sex':'male'},
+			// {'acount':'222','name':'???','password':'123','sex':'female'},
+			// {'acount':'333','name':'??','password':'123','sex':'male'}
+		
+		// 待处理事项			
 
-		// 取数据
-			var getData = function(){
-				DataFromOut()
-				setTimeout(()=>{
-					getData()
-				},120000);
-			}
-		// 头像组件
+			var stodoLists = [];
+			
+			// {no:"1",accountdate:"2015-11-23",pro:"?????װ??,cause:"??ĳ?????????豸",amount:"10,797,887.00",creater:"??ĳ"},
+			// {no:"2",accountdate:"2015-11-23",pro:"?????װ??,cause:"??ĳ?????????豸",amount:"10,000,000.00",creater:"??ĳ"},
+			// {no:"3",accountdate:"2015-11-23",pro:"?????װ??,cause:"??ĳ?????????豸",amount:"10,000,000.00",creater:"??ĳ"}
+
+		// 定时取新数据			
+
+		// var getData = function(){
+				//DataFromOut()
+				//setTimeout(()=>{
+				//	getData()
+				//},120000);
+			//}
+		
+		//头像组件
 
 			var HeadImgComponent = React.createClass({
 				getInitialState:function(){
@@ -72,7 +84,7 @@
 				handleClick : function(){
 					var newLogin = false
 					this.setState({isLogin:newLogin});
-					document.title = '消息助手'
+					document.title = '?Ϣ??'
 					this.props.callbackParent(newLogin)
 				},
 				render:function(){
@@ -90,54 +102,65 @@
 					return {isLogin:this.props.isLogin,userName:'',password:''}
 				},
 				changeType:function(e){
-					var noAcount = 0;
-					var nodeKey = e.keyCode
-					if(nodeKey === 13 && !this.props.flag){
-						for(var i=0;i < users.length;i++){
-							if(!this.props.isLogin){
-								if(users[i].acount === this.refs.myInput.value){
-									var newLogin = [!this.props.isLogin,users[i].name,users[i].sex]
-									this.setState({isLogin:newLogin,userName:users[i].name,sex:users[i].sex,password:users[i].password})
-									//console.error(users[i].sex)
-									this.props.callbackParent(newLogin)
-									this.refs.myInput.value = ''
-									return
-								}else{
-									++noAcount;
-									noAcount>= 3 && alert('Acount not exsists')	
+					if(e.keyCode === 13 && !this.props.flag){
+						// 输入用户名						
+						if(!this.props.isLogin){
+							DataFromOut(getUser,{user:this.refs.myInput.value},(r)=>{
+								//console.log(JSON.parse(r));
+								var tmp = JSON.parse(r);
+								switch(tmp.code){
+									case 200:
+										var sex = tmp.data.sex?tmp.data.sex:'male';
+										// 系统未定义用户性别时 默认为 male
+										var newLogin = [!this.props.isLogin,tmp.data.user,sex]
+										this.setState({isLogin:true,userName:tmp.data.user,sex:sex})
+										//console.error(users[i].sex)
+										localStorage.setItem('userName',tmp.data.user);
+										// 存 用户姓名										this.props.callbackParent(newLogin)
+										this.refs.myInput.value = '';
+										break;
+									case 404:
+										alert('对不起，您输入的用户不存在，请查证后再输入');
+										break;
+									case 500:
+										alert('对不起，服务器错误，请稍后再试')
+										break;
 								}
-							}else{
-								//console.warn(this.state.password)
-								if(this.state.password === this.refs.myInput.value){
-									//console.log('密码正确')
-									this.refs.myInput.value = ''
-									//console.info(this.state.userName)
-									document.title = `消息助手-当前用户: ( ${this.state.userName} )`
-									//console.info(this.props.isLogin)
+							},(r)=>{
+								console.log(r);
+							});
+						}else{
+						// 输入用户密码							
+							DataFromOut(Login,{user:localStorage.getItem('userName'),passwd:this.refs.myInput.value},(r)=>{
+								let tmp = JSON.parse(r);
+								// 验证成功
+								if(tmp.msg === 'login ok'){
+								// 修改 title
+									document.title = `消息助手-当前用户: ( ${this.state.userName} ) 待处理事项 ${stodoLists.length>0?stodoLists.length:'?'}`
 									var newFlag = [true,this.props.isLogin];
 									localStorage.setItem('item',this.state.userName)
 									this.props.oncallback1(newFlag)
-									return;
-								}else{
+								}else if(tmp.msg ==='passwd error'){
 									alert('密码错误')
 								}
-							}
+							},(r)=>{
+								console.log(r);
+							});
 						}
 					}
 				},
 				render:function(){
 					var flag = this.props.flag
 					var isLogin = this.props.isLogin
-					//console.log('aaaaaaaaaaaaaa'+isLogin+'zzzzzzzzzzzzzz')
-					var what = !isLogin?'请输入账号':'请输入密码';
+					var Enter = !isLogin?'请输入账号':'请输入密码';
 					var type = !isLogin?'text':'password';
 					return (
-						<input ref='myInput' type={type} placeholder={`${what}`} onKeyUp={this.changeType} />
+						<input ref='myInput' type={type} placeholder={`${Enter}`} onKeyUp={this.changeType} autoFocus={focus} />
 					)
 				}
 			});
 
-		// 登录组件
+		// 登陆组件
 			var LoginComponent = React.createClass({
 				getInitialState: function() {
 				    return {isLogin: false,userName:'',sex:'unkown'};
@@ -181,7 +204,7 @@
 					totalCount = CashTo3(totalCount);
 					//console.log(typeof totalCount)
 					return (
-						<p style={{textAlign:'right'}}>总计:&nbsp;￥ {totalCount}</p>
+						<p style={{textAlign:'right'}}>总计&nbsp;￥ {totalCount}</p>
 					)
 				}
 			}) 
@@ -201,8 +224,8 @@
 							<thead>
 								<tr>
 									<th>序号</th>
-									<th>时间</th>
-									<th>事项</th>
+									<th>日期</th>
+									<th>项目</th>
 									<th>事由</th>
 									<th>金额</th>
 									<th>经办人</th>
@@ -214,14 +237,14 @@
 				}
 			})
 
-		// 表单行 组件
+		// 表-行 组件
 			var Todo = React.createClass({
 				showMeSomething:function(e){
 					
 					var text = e.target.parentNode.innerText;
 					var node = text.replace(/\s/g,'+').split('+')	
 					var oDiv = document.querySelector('#tips');
-				    oDiv.innerText = `编号 -> ${node[0]} \n 日期 -> ${node[1]} \n事项 -> ${node[2]} \n事由 -> ${node[3]} \n金额 -> ${node[4]} \n操作手 -> ${node[5]}`;
+				    oDiv.innerText = `序号 -> ${node[0]} \n 时间 -> ${node[1]} \n项目 -> ${node[2]} \n事由 -> ${node[3]} \n金额 -> ${node[4]} \n经办人 -> ${node[5]}`;
 					oDiv.style.left = e.clientX + 'px'
 					oDiv.style.top = e.clientY + 'px'
 					oDiv.style.display = 'block'
@@ -234,25 +257,24 @@
 		        render: function() {
 		          return (
 		                <tr onMouseOver={this.showMeSomething} onMouseLeave={this.hideMeMessage} className="HighLight">
-							<td>{this.props.todo.no}</td>
-							<td className='left'>{this.props.todo.accountdate}</td>
+							<td className='Order'>{parseInt(this.props.todo.no)}</td>
+							<td className='left' style={{width:'10rem'}}>{this.props.todo.accountdate}</td>
 							<td className='left'>{this.props.todo.pro}</td>
-							<td className='left'>{this.props.todo.cause}</td>
+							<td className='left'>{this.props.todo.cause.trim()}</td>
 							<td className='right'>{this.props.todo.amount}</td>
-							<td >{this.props.todo.creater}</td>
+							<td className='hander'>{this.props.todo.creater}</td>
 						</tr>
 		            );
 		        }
 		    });	
 
 
-		// 选项卡（页眉）组件
+		// 页眉组件
 			var TodoListsComponent = React.createClass({
 				render:function(){
 					var todos = this.props.todoList
 					return (
 						<div>
-							<div className="todo_">待办事项:{todos.length}</div>
 							<TableComponent stodos={todos} />
 							<TotalCountComponent stodos={todos}/>
 						</div>
@@ -263,6 +285,13 @@
 
 		// 内容组件
 			var ContentComponent = React.createClass({
+				componentDidMount(){
+					DataFromOut(getAll,null,(r)=>{
+						console.log(decodeURI(encodeURI(r)));
+					},(r)=>{
+						console.log(r);
+					});
+				},
 				render:function(){
 					var todoList = this.props.todoLists
 					return <TodoListsComponent todoList={todoList} />

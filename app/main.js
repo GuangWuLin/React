@@ -36,9 +36,16 @@ function createWindow() {
   tray.setContextMenu(contextMenu);
   tray.on('balloon-click',()=>{
     console.log(1111)
+   win.focus() // 置顶（优先显示）
+  })
+  var changeIcon = function(){
+    var empty = nativeImage.createEmpty();
+    tray.setImage(empty)
+  }
+  tray.on('balloon-show',()=>{
+
   })
   // console.log(tray)
-  //prepareAudio();
 
   // Open the DevTools.
   win.webContents.openDevTools();
@@ -47,15 +54,6 @@ function createWindow() {
     win = null;
   });
 }
-
-function prepareAudio(){
-    //var audio = new Audio('./audio/money.wav');
-    // tray.addEventListener('click',()=>{
-    //   audio.currentTime = 0;
-    //   audio.play();
-    // })
-    audio.play();
-  }
 
 app.on('ready', createWindow);
 app.on('window-all-closed', () => {
@@ -72,11 +70,15 @@ app.on('activate', () => {
 ipcMain.on('close-main-window',function(){
 	app.quit();
 })
+
 ipcMain.on('CurrentUser',(event,msg)=>{
   tray.displayBalloon({
     icon:'../thr/img/2.jpg',
-    title:`Welcome ${msg[0]}`,
-    content:`There are ${msg[1].length} things exists `
+    title:` ${msg[0]} 您好`,
+    content:`${msg[0]} ,您当前有 ${msg[1].length} 个待办业务未处理。 `
   });
+
+  msg[1].length > 0 && win.flashFrame(true) // 页面窗口闪动提示
+
  tray.setToolTip(`消息助手 - 当前用户 ( ${msg[0]} ) 待办事件 ${msg[1].length}`)
 })

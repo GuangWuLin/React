@@ -1,4 +1,4 @@
-html {
+html,body {
   font-size: 14px;
   position: relative;
   overflow: hidden;
@@ -15,6 +15,13 @@ html {
 }
 .right{
 	text-align: right;
+	width: 11rem;
+}
+.hander{
+	width: 5rem;
+}
+.timeCount{
+	width: 4rem;
 }
 img{
 	display: flex;
@@ -47,7 +54,6 @@ input{
 	width: 100%;
 	height: 40%;
 	text-align: center;
-
 	font-size:15px;
 	color:#333333;
 	border: 1px;
@@ -56,24 +62,24 @@ input{
 	border-collapse: collapse;
 }
 .HighLight:hover{
-	color: red;
 	cursor:pointer;
+	background: rgba(234, 206, 149, 0.85);
+}
+.Order{
+	width: 3rem;
 }
 th {
-	background: url('../thr/img/cell-blue.jpg');
+	background: rgba(105, 100, 100, 0.21);
 	border-width: 1px;
 	padding: 8px;
 	border-style: solid;
 	border-color: #999999;
 }
 td {
-
-	background: url('../thr/img/cell-grey.jpg');
-	border-width: 2px;
+	border-width: 1px;
 	padding: 8px;
 	border-style: solid;
 	border-color: #999999;
-	box-shadow: orange 1px 2px 3px;
 }
 .todo_{
 	background-color: rgba(29, 47, 5, 0.64);
