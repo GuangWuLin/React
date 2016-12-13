@@ -71,12 +71,25 @@ ipcMain.on('close-main-window',function(){
 	app.quit();
 })
 
-ipcMain.on('CurrentUser',(event,msg)=>{
-  tray.displayBalloon({
-    icon:'../thr/img/2.jpg',
-    title:` ${msg[0]} 您好`,
-    content:`${msg[0]} ,您当前有 ${msg[1].length} 个待办业务未处理。 `
+
+
+ipcMain.on('newPush',(event,msg)=>{
+  var str = '',t;
+  msg[1].forEach(c=>{
+      str += `时间 -> ${c.date} \n项目 -> ${c.project} \n事由 -> ${c.cause} \n金额 -> ${c.amount} \n经办人 -> ${c.creater}\n S`
   });
+  var arr = str.split('S');
+  var change = function(){
+    t = setTimeout(change,5000)
+    return (arr.splice(0,1))[0];
+  }
+ tray.displayBalloon({
+    icon:'../thr/img/2.jpg',
+    title:` ${msg[0]} 您好,您当前有 ${msg[1].length} 个待办业务未处理.`,
+    content:change()
+  });
+  
+
 
   msg[1].length > 0 && win.flashFrame(true) // 页面窗口闪动提示
 

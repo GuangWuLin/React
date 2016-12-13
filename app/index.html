@@ -2,7 +2,7 @@
 	<head>
 		<title>消息助手</title>
 		 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    	<meta http-equiv="content-type" content="text/html; charset=GBK" />	
+    	<meta http-equiv="content-type" content="text/html; charset=utf-8" />	
 	    <script src="../thr/js/jquery.min.js" ></script>
 	    <script src="../thr/js/JSXTransformer.js"></script>
 	    <script src="../thr/js/react.js"></script>
@@ -22,12 +22,12 @@
 			var audio = document.querySelector('audio')
 			var Login = 'http://192.168.1.51:9797/todo?method=login'; //&cb=funcxx
 			var Logout = 'http://192.168.1.51:9797/todo?method=logout' // &cb=funcxx
-			var GetNews = 'http://192.168.1.51:9797/todo?method=getnew' ; //
+			var GetNew = 'http://192.168.1.51:9797/todo?method=getnew' ; //
 			var getAll = 'http://192.168.1.51:9797/todo?method=getall'; //
 			var getUser = 'http://192.168.1.51:9797/todo?method=user';
 
 
-		// 金额转 3位 一逗号模式			
+		// 金额转 3位 1逗号模式			
 		var CashTo3 = (str)=>{
 				let len = str.length, str2 = '', max = Math.floor(len / 3); 
 				for(var i = 0 ; i < max ; i++){ 
@@ -46,12 +46,12 @@
 					url:url,
 					data:params,
 					type:'POST',
-					
 					dataType:'jsonp',
 					success:success,
 					error:error
 				})
 			}
+
 		// 用户
 			var users = [];
 			// {'acount':'111','name':'??','password':'123','sex':'male'},
@@ -62,18 +62,31 @@
 
 			var stodoLists = [];
 			
-			// {no:"1",accountdate:"2015-11-23",pro:"?????װ??,cause:"??ĳ?????????豸",amount:"10,797,887.00",creater:"??ĳ"},
-			// {no:"2",accountdate:"2015-11-23",pro:"?????װ??,cause:"??ĳ?????????豸",amount:"10,000,000.00",creater:"??ĳ"},
-			// {no:"3",accountdate:"2015-11-23",pro:"?????װ??,cause:"??ĳ?????????豸",amount:"10,000,000.00",creater:"??ĳ"}
-
 		// 定时取新数据			
 
-		// var getData = function(){
-				//DataFromOut()
-				//setTimeout(()=>{
-				//	getData()
-				//},120000);
-			//}
+			var getData = function(){
+				DataFromOut(GetNew,null,(r)=>{
+					//console.log(r);
+					if(r.data){
+						let newArr = [];
+						r.data.forEach(c=>{
+								
+									//stodoLists.push(c);
+									newArr.push(c);
+									var user = localStorage.getItem('userName')
+									ipcRenderer.send('newPush',[user,newArr])
+								
+						
+						});
+						console.log(newArr)
+					}
+				},(r)=>{
+					console.log(r);
+				});
+				setTimeout(()=>{
+					getData()
+				},20000);
+			}
 		
 		//头像组件
 
@@ -84,7 +97,7 @@
 				handleClick : function(){
 					var newLogin = false
 					this.setState({isLogin:newLogin});
-					document.title = '?Ϣ??'
+					document.title = '消息助手'
 					this.props.callbackParent(newLogin)
 				},
 				render:function(){
@@ -101,22 +114,30 @@
 					//console.info(this.props.isLogin)
 					return {isLogin:this.props.isLogin,userName:'',password:''}
 				},
+
 				changeType:function(e){
 					if(e.keyCode === 13 && !this.props.flag){
 						// 输入用户名						
 						if(!this.props.isLogin){
 							DataFromOut(getUser,{user:this.refs.myInput.value},(r)=>{
-								//console.log(JSON.parse(r));
-								var tmp = JSON.parse(r);
-								switch(tmp.code){
+								console.log(r);
+								switch(r.code){
 									case 200:
-										var sex = tmp.data.sex?tmp.data.sex:'male';
+										DataFromOut(getAll,null,(r)=>{
+											stodoLists = r.data
+											console.log(r.data)
+										},(r)=>{
+											console.log(r)
+										})
+										var sex = r.data.sex?r.data.sex:'male';
 										// 系统未定义用户性别时 默认为 male
-										var newLogin = [!this.props.isLogin,tmp.data.user,sex]
-										this.setState({isLogin:true,userName:tmp.data.user,sex:sex})
+										var newLogin = [!this.props.isLogin,r.data.user,sex]
+										this.setState({isLogin:true,userName:r.data.title,sex:sex})
 										//console.error(users[i].sex)
-										localStorage.setItem('userName',tmp.data.user);
-										// 存 用户姓名										this.props.callbackParent(newLogin)
+										localStorage.setItem('userName',r.data.title);
+										localStorage.setItem('user',r.data.user);
+										// 存 用户姓名										
+										this.props.callbackParent(newLogin)
 										this.refs.myInput.value = '';
 										break;
 									case 404:
@@ -131,16 +152,16 @@
 							});
 						}else{
 						// 输入用户密码							
-							DataFromOut(Login,{user:localStorage.getItem('userName'),passwd:this.refs.myInput.value},(r)=>{
-								let tmp = JSON.parse(r);
+							DataFromOut(Login,{user:localStorage.getItem('user'),passwd:this.refs.myInput.value},(r)=>{
 								// 验证成功
-								if(tmp.msg === 'login ok'){
+								console.log(r)
+								if(r.msg === 'Login OK'){
 								// 修改 title
-									document.title = `消息助手-当前用户: ( ${this.state.userName} ) 待处理事项 ${stodoLists.length>0?stodoLists.length:'?'}`
+									document.title = `消息助手-当前用户: ( ${this.state.userName} ) 待处理事项 ${stodoLists.length>0?stodoLists.length:'无'}`
 									var newFlag = [true,this.props.isLogin];
 									localStorage.setItem('item',this.state.userName)
 									this.props.oncallback1(newFlag)
-								}else if(tmp.msg ==='passwd error'){
+								}else if(r.msg ==='passwd error'){
 									alert('密码错误')
 								}
 							},(r)=>{
@@ -163,7 +184,7 @@
 		// 登陆组件
 			var LoginComponent = React.createClass({
 				getInitialState: function() {
-				    return {isLogin: false,userName:'',sex:'unkown'};
+				    return {isLogin: false,user:'',sex:'unkown'};
 				},
 				onChildChanged: function (newLogin) {
 				   this.setState({
@@ -195,7 +216,7 @@
 				render:function(){
 					var totalCount = 0;
 					this.props.stodos.forEach(c=>{
-						totalCount += 1*(c.amount.replace(/\,/g,''));
+						totalCount += c.amount;
 					});
 					totalCount += '';
 					
@@ -217,7 +238,7 @@
 				render:function(){
 					var todolist = [];
 					this.state.stodo.forEach((todo,index)=>{
-						todolist.push(<Todo todo={todo} key={index} />)
+						todolist.push(<Todo todo={todo} key={index} pos={index}/>)
 					});
 					return (
 						<table className="imageTable">
@@ -242,9 +263,12 @@
 				showMeSomething:function(e){
 					
 					var text = e.target.parentNode.innerText;
-					var node = text.replace(/\s/g,'+').split('+')	
+					//console.info(text)
+					//console.warn(this.props.index);
+					var node = text.replace(/\s/g,'+').split('+')
+					//console.log(node)	
 					var oDiv = document.querySelector('#tips');
-				    oDiv.innerText = `序号 -> ${node[0]} \n 时间 -> ${node[1]} \n项目 -> ${node[2]} \n事由 -> ${node[3]} \n金额 -> ${node[4]} \n经办人 -> ${node[5]}`;
+				   	oDiv.innerText = `序号 -> ${node[0]} \n 时间 -> ${node[1]}  ${node[2]} \n项目 -> ${node[3]} \n事由 -> ${node[4]} \n金额 -> ${node[5]} \n经办人 -> ${node[6]}`;
 					oDiv.style.left = e.clientX + 'px'
 					oDiv.style.top = e.clientY + 'px'
 					oDiv.style.display = 'block'
@@ -257,11 +281,11 @@
 		        render: function() {
 		          return (
 		                <tr onMouseOver={this.showMeSomething} onMouseLeave={this.hideMeMessage} className="HighLight">
-							<td className='Order'>{parseInt(this.props.todo.no)}</td>
-							<td className='left' style={{width:'10rem'}}>{this.props.todo.accountdate}</td>
-							<td className='left'>{this.props.todo.pro}</td>
-							<td className='left'>{this.props.todo.cause.trim()}</td>
-							<td className='right'>{this.props.todo.amount}</td>
+							<td className='Order'>{this.props.pos+1}</td>
+							<td className='left' style={{width:'15rem'}}>{this.props.todo.date}</td>
+							<td className='left'>{this.props.todo.project}</td>
+							<td className='left'>{this.props.todo.cause}</td>
+							<td className='right'>{this.props.todo.amount}元</td>
 							<td className='hander'>{this.props.todo.creater}</td>
 						</tr>
 		            );
@@ -285,12 +309,8 @@
 
 		// 内容组件
 			var ContentComponent = React.createClass({
-				componentDidMount(){
-					DataFromOut(getAll,null,(r)=>{
-						console.log(decodeURI(encodeURI(r)));
-					},(r)=>{
-						console.log(r);
-					});
+				componentWillMount(){
+					getData()
 				},
 				render:function(){
 					var todoList = this.props.todoLists
@@ -303,6 +323,7 @@
 				getInitialState:function(){
 					return {flag:false,isLogin:false}
 				},
+				
 				changeFlag:function(newFlag){
 					this.setState({flag:newFlag[0],isLogin:newFlag[1]})
 				},
@@ -314,7 +335,6 @@
 					// 渲染进程（响应） -> 进入主页
 					//console.error(isLogin)
 					if(stodoLists.length >0 && isLogin) audio.play()
-					if(isLogin) ipcRenderer.send('CurrentUser',[user,stodoLists])
 					ipcRenderer.on('HelloMan',()=>{
 						//  必须在已经登录的状态才能进入主页
 						this.state.isLogin && this.setState({flag:true})

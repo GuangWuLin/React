@@ -2,6 +2,7 @@ html,body {
   font-size: 14px;
   position: relative;
   overflow: hidden;
+  background: rgba(221, 232, 239, 0.28);
 }
 .acountEnter{
 	display: flex;
@@ -44,9 +45,9 @@ input{
 	position: absolute;
 	font-size: 15px;
 	z-index: 2;
-	border: 1px solid purple;
+	border: 1px dotted purple;
 	border-radius: 6px;
-	background: lightblue;
+	background: #d8eaec;
 }
 .imagetable {
 	font-family: verdana,arial,sans-serif;
@@ -63,7 +64,8 @@ input{
 }
 .HighLight:hover{
 	cursor:pointer;
-	background: rgba(234, 206, 149, 0.85);
+	background: #fff9d7;
+	border: 1px solid #e2c822;
 }
 .Order{
 	width: 3rem;
