@@ -54,26 +54,24 @@
 
 		// 用户
 			var users = [];
-			// {'acount':'111','name':'??','password':'123','sex':'male'},
-			// {'acount':'222','name':'???','password':'123','sex':'female'},
-			// {'acount':'333','name':'??','password':'123','sex':'male'}
 		
 		// 待处理事项			
 
 			var stodoLists = [];
 			
-		// 定时取新数据			
+		// 定时取新数据		
 
+			// 推送的新数据
 			var getData = function(){
 				DataFromOut(GetNew,null,(r)=>{
 					//console.log(r);
-					if(r.data){
+					if(r.data.length>0){
 						let newArr = [];
 						r.data.forEach(c=>{
-								
+									
 									//stodoLists.push(c);
 									newArr.push(c);
-									var user = localStorage.getItem('userName')
+									let user = localStorage.getItem('userName')
 									ipcRenderer.send('newPush',[user,newArr])
 								
 						
@@ -83,9 +81,7 @@
 				},(r)=>{
 					console.log(r);
 				});
-				setTimeout(()=>{
-					getData()
-				},20000);
+				setTimeout(getData,40000);
 			}
 		
 		//头像组件
@@ -131,12 +127,14 @@
 										})
 										var sex = r.data.sex?r.data.sex:'male';
 										// 系统未定义用户性别时 默认为 male
-										var newLogin = [!this.props.isLogin,r.data.user,sex]
+										var newLogin = [!this.props.isLogin,r.data.title,sex]
 										this.setState({isLogin:true,userName:r.data.title,sex:sex})
 										//console.error(users[i].sex)
+										// 存用户名（中文名）
 										localStorage.setItem('userName',r.data.title);
+										// 存用户账号 (名字的拼音)
 										localStorage.setItem('user',r.data.user);
-										// 存 用户姓名										
+										// 存 用户姓名	(调用回调 )									
 										this.props.callbackParent(newLogin)
 										this.refs.myInput.value = '';
 										break;
@@ -159,7 +157,7 @@
 								// 修改 title
 									document.title = `消息助手-当前用户: ( ${this.state.userName} ) 待处理事项 ${stodoLists.length>0?stodoLists.length:'无'}`
 									var newFlag = [true,this.props.isLogin];
-									localStorage.setItem('item',this.state.userName)
+								//	localStorage.setItem('item',this.state.userName)
 									this.props.oncallback1(newFlag)
 								}else if(r.msg ==='passwd error'){
 									alert('密码错误')
@@ -184,7 +182,7 @@
 		// 登陆组件
 			var LoginComponent = React.createClass({
 				getInitialState: function() {
-				    return {isLogin: false,user:'',sex:'unkown'};
+				    return {isLogin: false,userName:'',sex:'unkown'};
 				},
 				onChildChanged: function (newLogin) {
 				   this.setState({
@@ -215,10 +213,12 @@
 			var TotalCountComponent = React.createClass({
 				render:function(){
 					var totalCount = 0;
-					this.props.stodos.forEach(c=>{
-						totalCount += c.amount;
-					});
-					totalCount += '';
+					if(this.props.stodos.length>0){
+						this.props.stodos.forEach(c=>{
+							totalCount += c.amount;
+							totalCount += '';
+						});
+					}
 					
 					//console.info(typeof totalCount)
 					
@@ -237,9 +237,11 @@
 				},
 				render:function(){
 					var todolist = [];
-					this.state.stodo.forEach((todo,index)=>{
-						todolist.push(<Todo todo={todo} key={index} pos={index}/>)
-					});
+					if(this.state.stodo.length>0){
+						this.state.stodo.forEach((todo,index)=>{
+							todolist.push(<Todo todo={todo} key={index} pos={index}/>)
+						});
+					}
 					return (
 						<table className="imageTable">
 							<thead>
@@ -330,18 +332,22 @@
 				render:function(){
 					var isLogin = this.state.isLogin;
 					//console.log(localStorage.getItem('item'))
-					var user = localStorage.getItem('item')
+					var userName = localStorage.getItem('userName')
 					//console.error(isLogin)
 					// 渲染进程（响应） -> 进入主页
 					//console.error(isLogin)
 					if(stodoLists.length >0 && isLogin) audio.play()
-					ipcRenderer.on('HelloMan',()=>{
+					ipcRenderer.on('showContent',()=>{
 						//  必须在已经登录的状态才能进入主页
 						this.state.isLogin && this.setState({flag:true})
 						this.state.isLogin || alert('Please login first')
 					});
+
+					// 用户登录 主进程（响应） -> 显示用户是谁
+					ipcRenderer.send('userLogin',userName)
+
 					// 渲染进程（响应）-> 注销
-					ipcRenderer.on('sayWhat',()=>{
+					ipcRenderer.on('Logout',()=>{
 						localStorage.removeItem('item')
 						document.title = '消息助手'
 						this.setState({flag:false,isLogin:false})

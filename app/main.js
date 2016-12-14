@@ -21,9 +21,9 @@ function createWindow() {
   // 图标 菜单
   const contextMenu = Menu.buildFromTemplate(
       [
-        {label: '主界面',checked:true,click:()=>{win.webContents.send('HelloMan')}},
+        {label: '主界面',checked:true,click:()=>{win.webContents.send('showContent')}},
         {label: '注销',
-          click:()=>{win.webContents.send('sayWhat')
+          click:()=>{win.webContents.send('Logout')
                     tray.setToolTip('消息助手')
         }},
         {label: '设置',click:()=>{win.webContents.send('userSetting')}},
@@ -71,24 +71,35 @@ ipcMain.on('close-main-window',function(){
 	app.quit();
 })
 
-
+ipcMain.on('userLogin',(event,msg)=>{
+  tray.setToolTip(`消息助手 - 当前用户 ( ${msg} ) `);
+})
 
 ipcMain.on('newPush',(event,msg)=>{
   var str = '',t;
   msg[1].forEach(c=>{
       str += `时间 -> ${c.date} \n项目 -> ${c.project} \n事由 -> ${c.cause} \n金额 -> ${c.amount} \n经办人 -> ${c.creater}\n S`
   });
-  var arr = str.split('S');
-  var change = function(){
-    t = setTimeout(change,5000)
-    return (arr.splice(0,1))[0];
-  }
- tray.displayBalloon({
-    icon:'../thr/img/2.jpg',
-    title:` ${msg[0]} 您好,您当前有 ${msg[1].length} 个待办业务未处理.`,
-    content:change()
-  });
+  var array = str.split('S');
   
+  function* Iterators(arr) {
+    for(let i=0,len=arr.length;i<len;i++){
+      yield arr.slice(i,i+1);
+    }
+  }
+  let gen = Iterators(array);
+  (function change(){
+    try{
+      tray.displayBalloon({
+        icon:'../thr/img/2.jpg',
+        title:` ${msg[0]} 您好,您当前有 ${msg[1].length} 个待办业务未处理.`,
+        content:gen.next().value.join()
+      });
+      setTimeout(change,5000);
+    }catch(e){
+      console.log(e)
+    }
+  })()
 
 
   msg[1].length > 0 && win.flashFrame(true) // 页面窗口闪动提示
