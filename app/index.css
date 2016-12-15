@@ -66,6 +66,7 @@ input{
 	cursor:pointer;
 	background: #fff9d7;
 	border: 1px solid #e2c822;
+	border-color: orange;
 }
 .Order{
 	width: 3rem;

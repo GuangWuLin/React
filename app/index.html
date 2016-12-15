@@ -26,6 +26,11 @@
 			var getAll = 'http://192.168.1.51:9797/todo?method=getall'; //
 			var getUser = 'http://192.168.1.51:9797/todo?method=user';
 
+		const shell = require('electron').shell
+
+		const exLinksBtn = document.getElementById('open-ex-links')
+
+		
 
 		// 金额转 3位 1逗号模式			
 		var CashTo3 = (str)=>{
@@ -64,10 +69,13 @@
 			// 推送的新数据
 			var getData = function(){
 				DataFromOut(GetNew,null,(r)=>{
-					//console.log(r);
+					console.log(r);
 					if(r.data.length>0){
 						let newArr = [];
-						r.data.forEach(c=>{
+						let arr = r.data.sort((a,b)=>{
+							return a.date - b.date;
+						});
+						arr.forEach(c=>{
 									
 									//stodoLists.push(c);
 									newArr.push(c);
@@ -81,9 +89,21 @@
 				},(r)=>{
 					console.log(r);
 				});
-				setTimeout(getData,40000);
+				setTimeout(getData,400000);
 			}
 		
+		// 定时取所有数据
+		var getAllData = function(){
+			DataFromOut(getAll,null,(r)=>{
+				stodoLists = r.data
+				console.log(r.data)
+			},(r)=>{
+				console.log(r)
+			});
+			setTimeout(getAllData,300000);
+		}
+
+
 		//头像组件
 
 			var HeadImgComponent = React.createClass({
@@ -91,6 +111,7 @@
 					return {isLogin:this.props.isLogin}
 				},
 				handleClick : function(){
+					console.log('is loaded')
 					var newLogin = false
 					this.setState({isLogin:newLogin});
 					document.title = '消息助手'
@@ -113,18 +134,18 @@
 
 				changeType:function(e){
 					if(e.keyCode === 13 && !this.props.flag){
-						// 输入用户名						
+						// 输入用户名
 						if(!this.props.isLogin){
+							console.log(0000)
 							DataFromOut(getUser,{user:this.refs.myInput.value},(r)=>{
+								console.log(2222)
 								console.log(r);
+								if(!r){
+									console.log(3333)
+								}
 								switch(r.code){
 									case 200:
-										DataFromOut(getAll,null,(r)=>{
-											stodoLists = r.data
-											console.log(r.data)
-										},(r)=>{
-											console.log(r)
-										})
+										getAllData();
 										var sex = r.data.sex?r.data.sex:'male';
 										// 系统未定义用户性别时 默认为 male
 										var newLogin = [!this.props.isLogin,r.data.title,sex]
@@ -147,9 +168,10 @@
 								}
 							},(r)=>{
 								console.log(r);
+								console.log(3333333333333333333333333333333)
 							});
 						}else{
-						// 输入用户密码							
+						// 输入用户密码		
 							DataFromOut(Login,{user:localStorage.getItem('user'),passwd:this.refs.myInput.value},(r)=>{
 								// 验证成功
 								console.log(r)
@@ -212,15 +234,16 @@
 		// 页脚统计组件
 			var TotalCountComponent = React.createClass({
 				render:function(){
-					var totalCount = 0;
+					let totalCount = 0;
 					if(this.props.stodos.length>0){
 						this.props.stodos.forEach(c=>{
-							totalCount += c.amount;
-							totalCount += '';
+							console.log(typeof c.amount)
+							totalCount += parseFloat(c.amount);
 						});
 					}
+					totalCount += '';
 					
-					//console.info(typeof totalCount)
+					//console.info(totalCount)
 					
 					totalCount = CashTo3(totalCount);
 					//console.log(typeof totalCount)
@@ -239,7 +262,7 @@
 					var todolist = [];
 					if(this.state.stodo.length>0){
 						this.state.stodo.forEach((todo,index)=>{
-							todolist.push(<Todo todo={todo} key={index} pos={index}/>)
+							todolist.push(<Todo todo={todo} key={index} pos={index} myUrl={todo.url}/>)
 						});
 					}
 					return (
@@ -263,7 +286,6 @@
 		// 表-行 组件
 			var Todo = React.createClass({
 				showMeSomething:function(e){
-					
 					var text = e.target.parentNode.innerText;
 					//console.info(text)
 					//console.warn(this.props.index);
@@ -277,12 +299,17 @@
 					//console.log(oDiv)
 					//console.info(e.clientX)
 				},
+				
+				drag(){
+					var url = this.props.myUrl
+					shell.openExternal(url)
+				},
 				hideMeMessage:function(){
-					document.querySelector('#tips').style.display = 'none'
+					document.querySelector('#tips').style.display = 'none';
 				},
 		        render: function() {
 		          return (
-		                <tr onMouseOver={this.showMeSomething} onMouseLeave={this.hideMeMessage} className="HighLight">
+		                <tr onMouseOver={this.showMeSomething} onMouseLeave={this.hideMeMessage} className="HighLight"  onMouseDown={this.drag}>
 							<td className='Order'>{this.props.pos+1}</td>
 							<td className='left' style={{width:'15rem'}}>{this.props.todo.date}</td>
 							<td className='left'>{this.props.todo.project}</td>

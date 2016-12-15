@@ -27,12 +27,16 @@ function createWindow() {
                     tray.setToolTip('消息助手')
         }},
         {label: '设置',click:()=>{win.webContents.send('userSetting')}},
-        {label: '退出',click:()=>{win.close()}} // 退出
+        {label: '退出',click:()=>{win.close()
+                    tray.destroy()
+        }} // 退出
       ]
     );
   // 提示
-  tray.setToolTip('消息助手')
+  console.log(1)
+  tray.setToolTip('消息助手');
   // 设置菜单到图标
+  console.log(2)
   tray.setContextMenu(contextMenu);
   tray.on('balloon-click',()=>{
     console.log(1111)
@@ -59,6 +63,7 @@ app.on('ready', createWindow);
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
+    tray.destroy()
   }
 });
 app.on('activate', () => {
@@ -69,16 +74,19 @@ app.on('activate', () => {
 
 ipcMain.on('close-main-window',function(){
 	app.quit();
+  tray.destroy()
 })
 
+// 用户登录时触发
 ipcMain.on('userLogin',(event,msg)=>{
   tray.setToolTip(`消息助手 - 当前用户 ( ${msg} ) `);
 })
 
+// 档有新消息推送时触发事件
 ipcMain.on('newPush',(event,msg)=>{
   var str = '',t;
   msg[1].forEach(c=>{
-      str += `时间 -> ${c.date} \n项目 -> ${c.project} \n事由 -> ${c.cause} \n金额 -> ${c.amount} \n经办人 -> ${c.creater}\n S`
+      str += `时间 -> ${c.date} \n项目 -> ${c.project} \n事由 -> ${c.cause} \n金额 -> ${c.amount} 元 \n经办人 -> ${c.creater}\n S`
   });
   var array = str.split('S');
   
