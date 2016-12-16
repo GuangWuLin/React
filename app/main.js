@@ -6,6 +6,7 @@ const {app} = electron;
 const {BrowserWindow} = electron;
 const {Menu, Tray} = require('electron')
 const MenuItem = electron.MenuItem
+
 const path = require('path')
 const ipcMain = require('electron').ipcMain;
 // 保持全局的窗口对象，可以不显示，如果没有这个对象，窗口点击关闭的时候，js对象会被gc干掉
@@ -91,27 +92,43 @@ ipcMain.on('close-main-window',function(){
 ipcMain.on('userLogin',(event,msg)=>{
   tray.setToolTip(`消息助手 - 当前用户 ( ${msg} ) `);
 })
-
+function keysrt(key,desc) {
+  return function(a,b){
+    return desc ? ~~(a[key] < b[key]) : ~~(a[key] > b[key]);
+  }
+}
 // 档有新消息推送时触发事件
 let undone = [];
 ipcMain.on('newPush',(event,msg)=>{
     let user = msg[0];
     let newpush = msg[1];
-    if (typeof undone !== 'string' && undone.length > 0) {
+    if (typeof undone !== 'string' && undone.length === 0) {
+      // 当初始 总数组 长度为 0 时 将新推送的数组先进行排序
+      newpush = newpush.sort(keysrt('date',true))
+      // 遍历新推送的数据 若某项 oper 值为 ‘delete’ 将其从数组中删除
+      newpush.forEach((c,i)=>{
+        c.oper === 'DELETE' && newpush.splice(i,1);
+      });
+      // 将处理好的数组返回给渲染进程
+      event.returnValue = newpush;
+    }else if(typeof undone !== 'string' && undone.length >== 0){
       undone.forEach((c,i)=>{
         // 遍历总数组 每一项单据
         newpush.forEach((v,j)=>{
           // 未处理总数组的每项单据的 ID 与 新单据的 ID 不能相同
-         c.id === v.id && [undone.splice(i,1)];
+         // c.id === v.id && [undone.splice(i,1)];
+        if (c.id === v.id) undone.splice(i,1);
+        if (v.oper === 'DELETE')  newpush.splice(j,1);
          //当信推送的信息中有 oper 为 ‘delete’ 的 便将其从数组中删除
-         v.oper === 'DELETE' && [newpush.splice(j,1)]
         })
       });
+      // 将查重之后的新单据数组拼接到总数组之后
+      undone = (undone.concat(newpush)).sort(keysrt('date',true));
+      // 通知渲染进程 改变数组
+     // win.webContents.send('checkLists',undone);
+     event.returnValue = undone;
     }
-    // 将查重之后的新单据数组拼接到总数组之后
-    undone = undone.concat(newpush);
-    // 通知渲染进程 改变数组
-    win.webContents.send('checkLists',undone);
+
     // 初始化拼接字符串
     let str = '';
     // 遍历新推送的数据
@@ -150,11 +167,11 @@ ipcMain.on('newPush',(event,msg)=>{
     // 页面窗口闪动提示
     newpush.length > 0 && win.flashFrame(true);
     // 设置鼠标悬浮 右下角 Icon 时显示的提示文字
-    tray.setToolTip(`消息助手 - 当前用户 ( ${user} ) 待办事件 ${newpush.length>0?newpush.length:'无'}`)
+    tray.setToolTip(`消息助手 - 当前用户 ( ${user} ) 待办事件 ${undone.length>0?undone.length:'无'}`)
 })
 
 ipcMain.on('FirstData',(event,msg)=>{
-  //console.log('FirstData')
+  // console.log('FirstData')
   // 当输入用户名之后将 undone 赋值为 最开始的未完成数组
   undone = msg;
 })

@@ -20,12 +20,11 @@
 		<audio src="./audio/money.wav"></audio>
 		<script type="text/jsx">
 			var audio = document.querySelector('audio')
-			var Login = 'http://192.168.1.51:9797/todo?method=login'; //&cb=funcxx
-			var Logout = 'http://192.168.1.51:9797/todo?method=logout' // &cb=funcxx
-			var GetNew = 'http://192.168.1.51:9797/todo?method=getnew' ; //
-			var getAll = 'http://192.168.1.51:9797/todo?method=getall'; //
-			var getUser = 'http://192.168.1.51:9797/todo?method=user';
-
+			var Login = 'http://192.168.1.222:9797/todo?method=login'; //&cb=funcxx
+			var Logout = 'http://192.168.1.222:9797/todo?method=logout' // &cb=funcxx
+			var GetNew = 'http://192.168.1.222:9797/todo?method=getnew' ; //
+			var getAll = 'http://192.168.1.222:9797/todo?method=getall'; //
+			var getUser = 'http://192.168.1.222:9797/todo?method=user';
 		const shell = require('electron').shell
 		const ipcRenderer = require('electron').ipcRenderer;
 		// 打开音效
@@ -37,20 +36,46 @@
 		ipcRenderer.on('stopBoy',()=>{
 			audio.pause()
 		})
+		// 排序
+		function keysrt(key,desc) {
+		  return function(a,b){
+		    return desc ? ~~(a[key] < b[key]) : ~~(a[key] > b[key]);
+		  }
+		}
+		// 格式化金额 1	
+
+		function CashTo3(number) {
+		    number = number.replace(/\,/g, "");
+		    if(isNaN(number) || number == "")return "";
+		    number = Math.round(number * 100) / 100;
+		        if (number < 0)
+		            return '-' + outputdollars(Math.floor(Math.abs(number) - 0) + '') + outputcents(Math.abs(number) - 0);
+		        else
+		        return outputdollars(Math.floor(number - 0) + '') + outputcents(number - 0);
+		} 
+		//格式化金额 2
+		function outputdollars(number) {
+		    if (number.length <= 3)
+		        return (number == '' ? '0' : number);
+		    else {
+		        var mod = number.length % 3;
+		        var output = (mod == 0 ? '' : (number.substring(0, mod)));
+		        for (i = 0; i < Math.floor(number.length / 3); i++) {
+		            if ((mod == 0) && (i == 0))
+		                output += number.substring(mod + 3 * i, mod + 3 * i + 3);
+		            else
+		                output += ',' + number.substring(mod + 3 * i, mod + 3 * i + 3);
+		        }
+		        return (output);
+		    }
+		}
+		//格式化金额 3
+		function outputcents(amount) {
+		    amount = Math.round(((amount) - Math.floor(amount)) * 100);
+		    return (amount < 10 ? '.0' + amount : '.' + amount);
+		}
 
 
-		// 金额转 3位 1逗号模式			
-		var CashTo3 = (str)=>{
-				let len = str.length, str2 = '', max = Math.floor(len / 3); 
-				for(var i = 0 ; i < max ; i++){ 
-					let s = str.slice(len - 3, len); 
-					str = str.substr(0, len - 3); 
-					str2 = (',' + s) + str2; 
-					len = str.length; 
-				} 
-				str += str2; 
-				return str;
-			}
 		// 跨域请求			
 		var DataFromOut = (url,params,success,limit)=>{
 				var params = params || null
@@ -80,31 +105,13 @@
 		// 定时取新数据		
 
 			var getData = function(){
-				DataFromOut(GetNew,null,(r)=>{
-					//console.log(r);
-					if(r.data.length>0){
-					// 存放获取到的新数据的数组
-						// 根据时间排序
-						let arr = r.data.sort((a,b)=>{
-							return a.date - b.date;
-						});
-						let user = localStorage.getItem('userName')
-						// 给主进程发消息 提示 有新数据输入
-						ipcRenderer.send('newPush',[user,arr])
-
-						//arr.forEach(c=>{
-									//stodoLists.push(c);
-						//});
-
-						//console.log(arr)
-					}
-				},5);
-				// 每隔 10s 获取一次
 				setTimeout(getData,10000);
+				return Promise.all([$.ajax({url:GetNew,data:null,type:'post',dataType:'jsonp'})]);
+				return Promise.reject();
 			}
-		
+
 		// 初始定时取所有数据
-		var getAllData = function(time){
+		var getAllData = function(){
 			setTimeout(getAllData,300000);
 			return Promise.all([$.ajax({url:getAll,data:null,type:'post',dataType:'jsonp'})]);
 			return Promise.reject();
@@ -120,15 +127,18 @@
 				},
 				handleClick : function(){
 					//console.log('is loaded')
-					var newLogin = false
+					let newLogin = false;
+					// 点击头像后将登陆状态改为未登录 false 同时将标题改为 默认
 					this.setState({isLogin:newLogin});
-					document.title = '消息助手'
-					this.props.callbackParent(newLogin)
+					document.title = '消息助手';
+					// 触发事件 改变 父组件中的状态
+					this.props.callbackParent(newLogin);
+					// 给主进程发信息 返回
 					ipcRenderer.send('Back');
 				},
 				render:function(){
-					var isLogin = this.props.isLogin
-					var sex = isLogin?this.props.sex:'unkown'
+					let isLogin = this.props.isLogin
+					let sex = isLogin?this.props.sex:'unkown'
 					//console.error(this.props.sex+'ssssssssssss'+isLogin)
 					return <img onClick={this.handleClick} src={`../thr/img/${sex}.jpg`} />
 				}
@@ -145,14 +155,10 @@
 					if(e.keyCode === 13 && !this.props.flag){
 						// 输入用户名
 						if(!this.props.isLogin){
-							//console.log(0000)
 							DataFromOut(getUser,{user:this.refs.myInput.value},(r)=>{
-								//console.log(2222)
 								//console.log(r);
-								
 								switch(r.code){
 									case 200:
-						
 										var sex = r.data.sex?r.data.sex:'male';
 										// 系统未定义用户性别时 默认为 male
 										var newLogin = [!this.props.isLogin,r.data.title,sex]
@@ -163,7 +169,7 @@
 										// 存用户账号 (名字的拼音)
 										localStorage.setItem('user',r.data.user);
 										// 存 用户姓名	(调用回调 )									
-										this.props.callbackParent(newLogin)
+										this.props.callbackParent(newLogin);
 										this.refs.myInput.value = '';
 										break;
 									case 404:
@@ -177,9 +183,8 @@
 								// 验证成功
 								//console.log(r)
 								if(r.msg === 'Login OK'){
-								
 									var newFlag = [true,this.props.isLogin];
-								//	localStorage.setItem('item',this.state.userName)
+									// 触发事件 改变父组件方法
 									this.props.oncallback1(newFlag)
 								}else if(r.msg ==='passwd error'){
 									alert('密码错误')
@@ -189,10 +194,10 @@
 					}
 				},
 				render:function(){
-					var flag = this.props.flag
-					var isLogin = this.props.isLogin
-					var Enter = !isLogin?'请输入账号':'请输入密码';
-					var type = !isLogin?'text':'password';
+					let flag = this.props.flag
+					let isLogin = this.props.isLogin
+					let Enter = !isLogin?'请输入账号':'请输入密码';
+					let type = !isLogin?'text':'password';
 					return (
 						<input ref='myInput' type={type} placeholder={`${Enter}`} onKeyUp={this.changeType} autoFocus={focus} />
 					)
@@ -205,21 +210,23 @@
 				    return {isLogin: false,userName:'',sex:'unkown'};
 				},
 				onChildChanged: function (newLogin) {
+				// 响应子组件事件 改变自身状态
 				   this.setState({
 				    isLogin: newLogin[0],
 				    userName:newLogin[1],
 				    sex:newLogin[2]
 				  });
 				},
+				// 触发事件 修改自己父组件的状态
 				onChangeFlag(newFlag){
 					this.props.oncallback(newFlag);
 				},
-				
+				// 渲染视图
 				render:function(){
-					var amLogin = this.state.userName
-					var sex = this.state.sex
-					var flag = this.props.flag;
-					//console.warn(flag)
+					let amLogin = this.state.userName
+					let sex = this.state.sex
+					let flag = this.props.flag;
+					//console.warn(flag);
 					return (
 						<div className="acountEnter">
 							<HeadImgComponent isLogin={this.state.isLogin} callbackParent={this.onChildChanged} sex={sex}/>
@@ -233,17 +240,20 @@
 		// 页脚统计组件
 			var TotalCountComponent = React.createClass({
 				render:function(){
+					//console.info(this.props.stodos)
 					let totalCount = 0;
 					if(this.props.stodos.length>0){
 						this.props.stodos.forEach(c=>{
+							// 统计全部数据的值
 							//console.log(typeof c.amount)
 							totalCount += parseFloat(c.amount);
 						});
 					}
+
 					totalCount += '';
 					
 					//console.info(totalCount)
-					
+					// 调用格式化金额方法
 					totalCount = CashTo3(totalCount);
 					//console.log(typeof totalCount)
 					return (
@@ -255,7 +265,19 @@
 		// 表单组件
 			var TableComponent = React.createClass({
 				getInitialState:function(){
+					//console.error(this.props.stodos)
 					return {stodo:this.props.stodos}
+				},
+				// 接受到来自父组件的新的props值，调用 setState 修改状态
+				componentWillReceiveProps: function(nextProps) {
+					//console.info(nextProps)
+				   this.setState({
+				    stodo: nextProps.stodos
+				  });
+				},
+				// 给 render 一个肯定的眼神，改变数据视图！
+				shouldComponentUpdate(nextProps){
+					return nextProps.stodos !== this.props.stodos // 返回 true or false
 				},
 				render:function(){
 					var todolist = [];
@@ -264,7 +286,7 @@
 							todolist.push(<Todo todo={todo} key={index} pos={index} myUrl={todo.url}/>)
 						});
 					}
-					return (
+						return (
 						<table className="imageTable">
 							<thead>
 								<tr>
@@ -284,25 +306,30 @@
 
 		// 表-行 组件
 			var Todo = React.createClass({
+				// 鼠标悬浮在某个表格上时 显示的提示框
 				showMeSomething:function(e){
+					// 悬浮当前对象的 内容
 					var text = e.target.parentNode.innerText;
-					//console.info(text)
-					//console.warn(this.props.index);
+					// 切割 内容
 					var node = text.replace(/\s/g,'+').split('+')
 					//console.log(node)	
+					// 查找 容器对象
 					var oDiv = document.querySelector('#tips');
+					// 填值
 				   	oDiv.innerText = `序号 -> ${node[0]} \n 时间 -> ${node[1]}  ${node[2]} \n项目 -> ${node[3]} \n事由 -> ${node[4]} \n金额 -> ${node[5]} \n经办人 -> ${node[6]}`;
+				   	// 设置 容器对象的 坐标
 					oDiv.style.left = e.clientX + 'px'
 					oDiv.style.top = e.clientY + 'px'
+					// 显示出来
 					oDiv.style.display = 'block'
-					//console.log(oDiv)
-					//console.info(e.clientX)
 				},
 				drag(){
+					// 跳转 url 页面
 					const url = this.props.myUrl
 					shell.openExternal(url)
 				},
 				hideMeMessage:function(){
+					// 隐藏 容器对象 
 					document.querySelector('#tips').style.display = 'none';
 				},
 		        render: function() {
@@ -323,7 +350,8 @@
 		// 页眉组件
 			var TodoListsComponent = React.createClass({
 				render:function(){
-					var todos = this.props.todoList
+					var todos = this.props.todoList;
+					//console.warn(todos)
 					return (
 						<div>
 							<TableComponent stodos={todos} />
@@ -336,11 +364,44 @@
 
 		// 内容组件
 			var ContentComponent = React.createClass({
+				getInitialState(){
+					return {list:[],isNew:false}
+				},
 				componentWillMount(){
-					getData();
+					let newArr = [];
+					getData().then(val=>{
+
+						let response = val[0];
+						if(response.data.length>0){
+						// 存放获取到的新数据的数组
+							// 根据时间排序
+							let arr = response.data.sort(keysrt('date',true));
+							let user = localStorage.getItem('userName')
+							// 给主进程发消息 提示 有新数据输入
+							newArr = ipcRenderer.sendSync('newPush',[user,arr])
+							console.log(newArr)
+							document.title = `消息助手-当前用户: ( ${user} ) 待处理事项 ${newArr.length>0?newArr.length:'无'}`
+							
+						}
+						//console.log(newArr)
+						// 从新设置 list 的数组为 主进程返回的 新数组
+						this.setState({list:newArr,isNew:true});
+
+						},val=>{
+							console.log(val)
+						}).catch(e=>{
+							console.log(e)
+						})
+
+				//	console.log(newArr)
 				},
 				render:function(){
-					var todoList = this.props.todoLists
+					let isNew = this.state.isNew;
+					let list = this.state.list;
+					//console.log(isNew)
+					//console.log(list)
+					var todoList = isNew?list:this.props.todoLists;
+					//console.log(todoList)
 					return <TodoListsComponent todoList={todoList} />
 				}
 			})
@@ -351,28 +412,36 @@
 					return {flag:false,isLogin:false,list:[]}
 				},
 				componentWillMount(){
-					console.log(this.state.flag)
-					getAllData(5).then(val=>{
-						console.log(val[0].data)
+					//console.log(this.state.flag)
+					getAllData().then(val=>{
+						//console.log(arr)
 						let arr = val[0].data;
+						// 获取到的全部数据
+						arr = arr.sort(keysrt('date',true));
+						console.info(arr);
 						if(typeof arr !=='string' && arr.length>0){
-							val[0].data.forEach((c,i)=>{
-								c.oper === 'DELETE' && val[0].data.splice(i,1);
+							// 遍历 全部数据
+							arr.forEach((c,i)=>{
+								// 当 某个数据的 oper 为 'delete' 时将其从数组中删除
+								c.oper === 'DELETE' && arr.splice(i,1);
 							});
-							this.setState({list:val[0].data})
+							// 改变状态
+							this.setState({list:arr})
 						}
-						console.log(this.state.list)
+						//console.log(this.state.list)
+						// 仅当还未登录时 将整个数组发往 主进程
 						this.props.flag || [ipcRenderer.send('FirstData',this.state.list)]
 					}).catch(e=>{
 						console.log(e)
-						alert('连接超时，请重试')
+						//alert('连接超时，请重试')
 					});
 				},
 				changeFlag:function(newFlag){
-					this.setState({flag:newFlag[0],isLogin:newFlag[1]})
+					this.setState({flag:newFlag[0],isLogin:newFlag[1],isNew:false})
 				},
 				render:function(){
 					var isLogin = this.state.isLogin;
+					var isNew = this.state.isNew;
 					//console.log(localStorage.getItem('item'))
 					var userName = localStorage.getItem('userName')
 					//console.error(isLogin)
@@ -387,20 +456,16 @@
 					// 修改 title
 					isLogin && [document.title = `消息助手-当前用户: ( ${userName} ) 待处理事项 ${this.state.list.length>0?this.state.list.length:'无'}`]
 					// 用户登录 主进程（响应） -> 显示用户是谁
-					this.state.isLogin && [ipcRenderer.send('userLogin',userName)]
+					isLogin && [ipcRenderer.send('userLogin',userName)]
 
 					// 渲染进程（响应）-> 注销
 					ipcRenderer.on('Logout',()=>{
 						localStorage.removeItem('item')
-						document.title = '消息助手';
+						document.title = '消息助手'
 						this.setState({flag:false,isLogin:false})
 					});
-					// 替换
-					ipcRenderer.on('checkLists',(event,msg)=>{
-						this.setState({list:msg});
-						//console.log(event,msg)
-					});
-					var tmp = (this.state.flag & this.state.list.length>0)?<ContentComponent todoLists={this.state.list} flag={this.state.flag}/>: <LoginComponent flag={this.state.flag} oncallback={this.changeFlag}/>
+					
+					var tmp = (this.state.flag & this.state.list.length>0)?<ContentComponent todoLists={this.state.list} flag={this.state.flag} mark={isNew}/>: <LoginComponent flag={this.state.flag} oncallback={this.changeFlag}/>
 					return (
 						<div>{tmp}</div>
 					)
