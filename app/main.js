@@ -12,6 +12,34 @@ const ipcMain = require('electron').ipcMain;
 // 保持全局的窗口对象，可以不显示，如果没有这个对象，窗口点击关闭的时候，js对象会被gc干掉
 let win;
 var tray = null;
+
+// 排序方法
+function keysrt(key,desc){
+    return function(a,b){
+      if(typeof a[key] == 'string' && typeof b[key] == 'string'){
+        // console.log('string!');
+        let arrA = [],arrB = [];
+        for(let i=0,len=a[key].length;i<len;i++){
+          if (!isNaN(a[key][i])) {
+            // console.log(a[key][i])
+            arrA.push(a[key][i]);
+          }
+        }
+        for(let j=0,len=b[key].length;j<len;j++){
+          if (!isNaN(b[key][j])) {
+            arrB.push(b[key][j]);
+          }
+        }
+        let strA = arrA.join('').replace(/\s?/g,'');
+        let strB = arrB.join('').replace(/\s?/g,'');
+        let A = parseInt(strA);
+        let B = parseInt(strB);
+        return !desc ? (A-B) : (B-A)
+        //console.log(typeof A)
+      }
+    }
+  }
+// c创建窗口
 function createWindow() {
   // Create the browser window.
   win = new BrowserWindow({width: 800, height: 600});
@@ -92,41 +120,52 @@ ipcMain.on('close-main-window',function(){
 ipcMain.on('userLogin',(event,msg)=>{
   tray.setToolTip(`消息助手 - 当前用户 ( ${msg} ) `);
 })
-function keysrt(key,desc) {
-  return function(a,b){
-    return desc ? ~~(a[key] < b[key]) : ~~(a[key] > b[key]);
-  }
-}
+
 // 档有新消息推送时触发事件
 let undone = [];
 ipcMain.on('newPush',(event,msg)=>{
     let user = msg[0];
     let newpush = msg[1];
-    if (typeof undone !== 'string' && undone.length === 0) {
+    if (Array.isArray(undone) && undone.length === 0) {
       // 当初始 总数组 长度为 0 时 将新推送的数组先进行排序
-      newpush = newpush.sort(keysrt('date',true))
+      newpush.sort(keysrt('date',true));
+      // console.log(1111)
       // 遍历新推送的数据 若某项 oper 值为 ‘delete’ 将其从数组中删除
       newpush.forEach((c,i)=>{
         c.oper === 'DELETE' && newpush.splice(i,1);
       });
+      // console.log('ishere' + newpush)
+      // console.log(2222)
       // 将处理好的数组返回给渲染进程
       event.returnValue = newpush;
-    }else if(typeof undone !== 'string' && undone.length >== 0){
-      undone.forEach((c,i)=>{
+    }else if(Array.isArray(undone) && undone.length > 0){
+      // console.log(3333)
+      // console.log(newpush)
+
+      newpush.forEach((c,i)=>{
         // 遍历总数组 每一项单据
-        newpush.forEach((v,j)=>{
+        // console.log('ishere?')
+        undone.forEach((v,j)=>{
+          console.log(c.id +"==="+ v.id)
           // 未处理总数组的每项单据的 ID 与 新单据的 ID 不能相同
          // c.id === v.id && [undone.splice(i,1)];
-        if (c.id === v.id) undone.splice(i,1);
-        if (v.oper === 'DELETE')  newpush.splice(j,1);
-         //当信推送的信息中有 oper 为 ‘delete’ 的 便将其从数组中删除
+          if (v.id === c.id){
+            undone.splice(j,1);
+            // console.log(000)
+          } 
+          
         })
+        if (c.oper === 'DELETE')  newpush.splice(i,1);
+         //当信推送的信息中有 oper 为 ‘delete’ 的 便将其从数组中删除
       });
+      // console.log(undone)
       // 将查重之后的新单据数组拼接到总数组之后
-      undone = (undone.concat(newpush)).sort(keysrt('date',true));
+      undone = undone.concat(newpush)
+      undone.sort(keysrt('date',true));
       // 通知渲染进程 改变数组
      // win.webContents.send('checkLists',undone);
      event.returnValue = undone;
+     console.log(4444)
     }
 
     // 初始化拼接字符串
@@ -147,7 +186,7 @@ ipcMain.on('newPush',(event,msg)=>{
     let gen = Iterators(array);
     (function change(){
       try{
-        if (typeof newpush !=='string' && newpush.length >0) {
+        if (Array.isArray(newpush) && newpush.length >0) {
           // 设置气泡提示信息
           tray.displayBalloon({
             icon:'../thr/img/2.jpg',
@@ -171,9 +210,15 @@ ipcMain.on('newPush',(event,msg)=>{
 })
 
 ipcMain.on('FirstData',(event,msg)=>{
-  // console.log('FirstData')
   // 当输入用户名之后将 undone 赋值为 最开始的未完成数组
   undone = msg;
+
+  if (Array.isArray(undone) && undone.length >0) {
+    event.returnValue =  undone.sort(keysrt('date',true));
+    //console.log(undone.sort(keysrt('date',true)))
+  }else if(Array.isArray(undone) && undone.length === 0){
+    event.returnValue = undone;
+  }
 })
 // 当用户点击输入密码上面的头像时回到输入账号的页面
 ipcMain.on('Back',(event,msg)=>{

@@ -37,11 +37,7 @@
 			audio.pause()
 		})
 		// 排序
-		function keysrt(key,desc) {
-		  return function(a,b){
-		    return desc ? ~~(a[key] < b[key]) : ~~(a[key] > b[key]);
-		  }
-		}
+		
 		// 格式化金额 1	
 
 		function CashTo3(number) {
@@ -77,7 +73,7 @@
 
 
 		// 跨域请求			
-		var DataFromOut = (url,params,success,limit)=>{
+		var DataFromOut = (url,params,success,error)=>{
 				var params = params || null
 				try{
 					$.ajax({
@@ -86,9 +82,7 @@
 						type:'POST',
 						dataType:'jsonp',
 						success:success,
-						error:()=>{
-							limit > 5 && alert('请求超时，请重试')
-						}
+						error:error
 					})
 				}catch(e){
 					alert(e.message)
@@ -270,7 +264,7 @@
 				},
 				// 接受到来自父组件的新的props值，调用 setState 修改状态
 				componentWillReceiveProps: function(nextProps) {
-					//console.info(nextProps)
+				   console.info(nextProps)
 				   this.setState({
 				    stodo: nextProps.stodos
 				  });
@@ -375,20 +369,18 @@
 						if(response.data.length>0){
 						// 存放获取到的新数据的数组
 							// 根据时间排序
-							let arr = response.data.sort(keysrt('date',true));
+							//let arr = response.data.sort(keysrt('date',true));
 							let user = localStorage.getItem('userName')
 							// 给主进程发消息 提示 有新数据输入
-							newArr = ipcRenderer.sendSync('newPush',[user,arr])
-							console.log(newArr)
+							newArr = ipcRenderer.sendSync('newPush',[user,response.data])
+							//console.log(newArr)
 							document.title = `消息助手-当前用户: ( ${user} ) 待处理事项 ${newArr.length>0?newArr.length:'无'}`
-							
+							// 从新设置 list 的数组为 主进程返回的 新数组
+							this.setState({list:newArr,isNew:true});
 						}
 						//console.log(newArr)
-						// 从新设置 list 的数组为 主进程返回的 新数组
-						this.setState({list:newArr,isNew:true});
-
-						},val=>{
-							console.log(val)
+						},(reject)=>{
+							alert('请求超时')
 						}).catch(e=>{
 							console.log(e)
 						})
@@ -414,23 +406,25 @@
 				componentWillMount(){
 					//console.log(this.state.flag)
 					getAllData().then(val=>{
-						//console.log(arr)
 						let arr = val[0].data;
 						// 获取到的全部数据
-						arr = arr.sort(keysrt('date',true));
-						console.info(arr);
-						if(typeof arr !=='string' && arr.length>0){
+						if(Array.isArray(arr) && arr.length>0){
 							// 遍历 全部数据
 							arr.forEach((c,i)=>{
 								// 当 某个数据的 oper 为 'delete' 时将其从数组中删除
 								c.oper === 'DELETE' && arr.splice(i,1);
 							});
+							// 仅当还未登录时 将整个数组发往 主进程
+							if(!this.props.flag){
+								arr = ipcRenderer.sendSync('FirstData',arr);
+								//console.info('all',arr)
+							}
 							// 改变状态
 							this.setState({list:arr})
 						}
-						//console.log(this.state.list)
-						// 仅当还未登录时 将整个数组发往 主进程
-						this.props.flag || [ipcRenderer.send('FirstData',this.state.list)]
+						//console.info(this.state.list)
+					},(reject)=>{
+						alert('请求超时')
 					}).catch(e=>{
 						console.log(e)
 						//alert('连接超时，请重试')
