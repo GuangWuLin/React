@@ -1,7 +1,8 @@
 html,body {
   font-size: 14px;
   position: relative;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: auto;
   background: rgba(221, 232, 239, 0.28);
 }
 .acountEnter{
@@ -27,7 +28,7 @@ html,body {
 img{
 	display: flex;
 	align-self: center;
-	margin-top: 30%;
+	margin-top: 22%;
 	width: 80px;
 	height: 80px;
 	border-radius: 50%;
@@ -74,13 +75,13 @@ input{
 th {
 	background: rgba(105, 100, 100, 0.21);
 	border-width: 1px;
-	padding: 8px;
+	padding: 4px;
 	border-style: solid;
 	border-color: #999999;
 }
 td {
 	border-width: 1px;
-	padding: 5px;
+	padding: 2px;
 	height: 3rem;
 	border-style: solid;
 	border-color: #999999;

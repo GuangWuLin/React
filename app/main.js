@@ -1,3 +1,4 @@
+require('events').EventEmitter.prototype._maxListeners = 100;
 const React = require('react')
 const electron = require('electron');
 // Module to control application life.
@@ -6,7 +7,6 @@ const {app} = electron;
 const {BrowserWindow} = electron;
 const {Menu, Tray} = require('electron')
 const MenuItem = electron.MenuItem
-
 const path = require('path')
 const ipcMain = require('electron').ipcMain;
 // 保持全局的窗口对象，可以不显示，如果没有这个对象，窗口点击关闭的时候，js对象会被gc干掉
@@ -42,12 +42,18 @@ function keysrt(key,desc){
 // c创建窗口
 function createWindow() {
   // Create the browser window.
-  win = new BrowserWindow({width: 800, height: 600});
+  win = new BrowserWindow({resizable:false, width: 800, height: 600,x:800,y:260,icon: '../thr/img/87.jpg'});
   // win 加载静态资源
   win.loadURL(`file://${__dirname}/index.html`);
   // 创建一个平台图标
-  tray = new Tray(path.join(__dirname, '../thr/img/1.png'))
+  tray = new Tray(path.join(__dirname, '../thr/img/87.jpg'))
   // 图标 菜单
+
+  tray.on('click',()=>{
+    // console.log('click')
+    win.focus()
+  })
+
   const contextMenu = Menu.buildFromTemplate(
       [
         {label: '主界面',checked:true,click:()=>{
@@ -58,6 +64,7 @@ function createWindow() {
           click:()=>{
             win.webContents.send('Logout')
             tray.setToolTip('消息助手')
+            win.focus()
             undone = []
           }
         },
@@ -85,9 +92,6 @@ function createWindow() {
     var empty = nativeImage.createEmpty();
     tray.setImage(empty)
   }
-  tray.on('balloon-show',()=>{
-
-  })
   // console.log(tray)
 
   // Open the DevTools.
@@ -146,7 +150,7 @@ ipcMain.on('newPush',(event,msg)=>{
         // 遍历总数组 每一项单据
         // console.log('ishere?')
         undone.forEach((v,j)=>{
-          console.log(c.id +"==="+ v.id)
+          // console.log(c.id +"==="+ v.id)
           // 未处理总数组的每项单据的 ID 与 新单据的 ID 不能相同
          // c.id === v.id && [undone.splice(i,1)];
           if (v.id === c.id){
@@ -165,7 +169,7 @@ ipcMain.on('newPush',(event,msg)=>{
       // 通知渲染进程 改变数组
      // win.webContents.send('checkLists',undone);
      event.returnValue = undone;
-     console.log(4444)
+     // console.log(4444)
     }
 
     // 初始化拼接字符串
@@ -189,7 +193,7 @@ ipcMain.on('newPush',(event,msg)=>{
         if (Array.isArray(newpush) && newpush.length >0) {
           // 设置气泡提示信息
           tray.displayBalloon({
-            icon:'../thr/img/2.jpg',
+            icon:'../thr/img/87.jpg',
             title:` ${user} 您好,您有 ${newpush.length} 个新业务未处理.`,
             content:gen.next().value.join()
           });

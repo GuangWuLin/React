@@ -73,16 +73,19 @@
 
 
 		// 跨域请求			
-		var DataFromOut = (url,params,success,error)=>{
+		var DataFromOut = (url,params,time,success)=>{
 				var params = params || null
 				try{
 					$.ajax({
 						url:url,
 						data:params,
 						type:'POST',
+						timeout:time,
 						dataType:'jsonp',
 						success:success,
-						error:error
+						error:function(XMLHttpRequest){
+							XMLHttpRequest.statusText === 'timeout' && alert('连接超时，请稍后重试');
+						}
 					})
 				}catch(e){
 					alert(e.message)
@@ -100,14 +103,14 @@
 
 			var getData = function(){
 				setTimeout(getData,10000);
-				return Promise.all([$.ajax({url:GetNew,data:null,type:'post',dataType:'jsonp'})]);
+				return Promise.all([$.ajax({url:GetNew,data:null,type:'post',dataType:'jsonp',timeout:5000})]);
 				return Promise.reject();
 			}
 
 		// 初始定时取所有数据
 		var getAllData = function(){
 			setTimeout(getAllData,300000);
-			return Promise.all([$.ajax({url:getAll,data:null,type:'post',dataType:'jsonp'})]);
+			return Promise.all([$.ajax({url:getAll,data:null,type:'post',dataType:'jsonp',timeout:5000})]);
 			return Promise.reject();
 			// 每过 5min 获取一次
 		}
@@ -149,7 +152,7 @@
 					if(e.keyCode === 13 && !this.props.flag){
 						// 输入用户名
 						if(!this.props.isLogin){
-							DataFromOut(getUser,{user:this.refs.myInput.value},(r)=>{
+							DataFromOut(getUser,{user:this.refs.myInput.value},5000,(r)=>{
 								//console.log(r);
 								switch(r.code){
 									case 200:
@@ -170,10 +173,10 @@
 										alert('对不起，您输入的用户不存在，请查证后再输入');
 										break;
 								}
-							},5);
+							});
 						}else{
 						// 输入用户密码		
-							DataFromOut(Login,{user:localStorage.getItem('user'),passwd:this.refs.myInput.value},(r)=>{
+							DataFromOut(Login,{user:localStorage.getItem('user'),passwd:this.refs.myInput.value},5000,(r)=>{
 								// 验证成功
 								//console.log(r)
 								if(r.msg === 'Login OK'){
@@ -183,7 +186,7 @@
 								}else if(r.msg ==='passwd error'){
 									alert('密码错误')
 								}
-							},5);
+							});
 						}
 					}
 				},
@@ -264,7 +267,7 @@
 				},
 				// 接受到来自父组件的新的props值，调用 setState 修改状态
 				componentWillReceiveProps: function(nextProps) {
-				   console.info(nextProps)
+				   //console.info(nextProps)
 				   this.setState({
 				    stodo: nextProps.stodos
 				  });
@@ -327,13 +330,17 @@
 					document.querySelector('#tips').style.display = 'none';
 				},
 		        render: function() {
+		        	let amount = this.props.todo.amount;
+		        	amount += ''; 
+		        	amount = CashTo3(amount);
+		        	//console.log(amount)
 		          return (
 		                <tr onMouseOver={this.showMeSomething} onMouseLeave={this.hideMeMessage} className="HighLight"  onMouseDown={this.drag}>
 							<td className='Order'>{this.props.pos+1}</td>
 							<td className='left' style={{width:'15rem'}}>{this.props.todo.date}</td>
 							<td className='left'>{this.props.todo.project}</td>
 							<td className='left'>{this.props.todo.cause}</td>
-							<td className='right'>{this.props.todo.amount}元</td>
+							<td className='right'>{amount}元</td>
 							<td className='hander'>{this.props.todo.creater}</td>
 						</tr>
 		            );
@@ -379,8 +386,8 @@
 							this.setState({list:newArr,isNew:true});
 						}
 						//console.log(newArr)
-						},(reject)=>{
-							alert('请求超时')
+						},function(XMLHttpRequest){
+							XMLHttpRequest.statusText === 'timeout' && alert('请求超时');
 						}).catch(e=>{
 							console.log(e)
 						})
@@ -423,8 +430,9 @@
 							this.setState({list:arr})
 						}
 						//console.info(this.state.list)
-					},(reject)=>{
-						alert('请求超时')
+					},function(XMLHttpRequest){
+						console.log(XMLHttpRequest)
+						XMLHttpRequest.statusText === 'timeout' && alert('请求超时')
 					}).catch(e=>{
 						console.log(e)
 						//alert('连接超时，请重试')
