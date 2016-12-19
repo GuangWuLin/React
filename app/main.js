@@ -42,17 +42,12 @@ function keysrt(key,desc){
 // c创建窗口
 function createWindow() {
   // Create the browser window.
-  win = new BrowserWindow({resizable:false, width: 800, height: 600,x:800,y:260,icon: '../thr/img/87.jpg'});
+  win = new BrowserWindow({resizable:false, width: 800, height: 600,x:800,y:260,icon: 'app.ico'});
   // win 加载静态资源
   win.loadURL(`file://${__dirname}/index.html`);
   // 创建一个平台图标
-  tray = new Tray(path.join(__dirname, '../thr/img/87.jpg'))
+  tray = new Tray(path.join(__dirname, 'app.ico'))
   // 图标 菜单
-
-  tray.on('click',()=>{
-    // console.log('click')
-    win.focus()
-  })
 
   const contextMenu = Menu.buildFromTemplate(
       [
@@ -74,7 +69,7 @@ function createWindow() {
         },
         {label: '退出',click:()=>{
             win.close()
-            tray.destroy()
+            if(tray) tray.destroy()
           }
         } // 退出
       ]
@@ -88,10 +83,16 @@ function createWindow() {
    win.focus() // 置顶（优先显示）
    win.webContents.send('stopBoy')
   })
-  var changeIcon = function(){
-    var empty = nativeImage.createEmpty();
-    tray.setImage(empty)
-  }
+
+  tray.on('click',()=>{
+    // console.log('click')
+    win.focus()
+  })
+
+  // var changeIcon = function(){
+  //   var empty = nativeImage.createEmpty();
+  //   tray.setImage(empty)
+  // }
   // console.log(tray)
 
   // Open the DevTools.
@@ -99,6 +100,7 @@ function createWindow() {
   // Emitted when the window is closed.
    win.on('closed', () => {
     win = null;
+    if (tray) tray.destroy()
   });
 }
 
@@ -106,7 +108,7 @@ app.on('ready', createWindow);
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {
     app.quit();
-    tray.destroy()
+    if (tray) tray.destroy()
   }
 });
 app.on('activate', () => {
@@ -117,7 +119,7 @@ app.on('activate', () => {
 
 ipcMain.on('close-main-window',function(){
 	app.quit();
-  tray.destroy()
+  if (tray) tray.destroy()
 })
 
 // 用户登录时触发
@@ -193,7 +195,7 @@ ipcMain.on('newPush',(event,msg)=>{
         if (Array.isArray(newpush) && newpush.length >0) {
           // 设置气泡提示信息
           tray.displayBalloon({
-            icon:'../thr/img/87.jpg',
+            icon:'app.ico',
             title:` ${user} 您好,您有 ${newpush.length} 个新业务未处理.`,
             content:gen.next().value.join()
           });

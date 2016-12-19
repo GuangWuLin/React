@@ -1,22 +1,13 @@
 {
   "name": "myFirstApp",
   "version": "0.1.0",
-  "main": "./main.js",
+  "main": "main.js",
   "scripts": {
-    "start": "electron ."
-  }
-  ,
-  "devDependencies": {
-    "babel-preset-react": "^6.16.0",
-    "webpack":"^1.13.3",
-    "electron-prebuilt": "^1.4.10"
+    "start": "electron .",
+    "package":"electron-packager . AssistantNews --platform=win32 --arch=x64 --out ./MyApp --version 1.4.10 --overwrite --icon=app.ico --ignore=node_modules/electron-* --ignore=node_modules/.bin --ignore=.git --ignore=dist --no-prune"
   },
-  "dependencies": {
-    "rctui": "^0.7.0",
-    "react": "^15.4.1",
-    "react-dom": "^15.4.1",
-    "react-redux": "^4.4.6",
-    "react-router": "^3.0.0",
-    "redux": "^3.6.0"
+  "devDependencies": {
+    "electron-packager": "^8.4.0",
+    "electron-prebuilt": "^1.4.10"
   }
 }
