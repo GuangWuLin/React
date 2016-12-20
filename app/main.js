@@ -9,6 +9,9 @@ const {Menu, Tray} = require('electron')
 const MenuItem = electron.MenuItem
 const path = require('path')
 const ipcMain = require('electron').ipcMain;
+
+
+ 
 // 保持全局的窗口对象，可以不显示，如果没有这个对象，窗口点击关闭的时候，js对象会被gc干掉
 let win;
 var tray = null;
@@ -42,7 +45,14 @@ function keysrt(key,desc){
 // c创建窗口
 function createWindow() {
   // Create the browser window.
-  win = new BrowserWindow({resizable:false, width: 800, height: 600,x:800,y:260,icon: 'app.ico'});
+  // resizable:false,  可收缩
+
+  var electronScreen = electron.screen;
+  var size = electronScreen.getPrimaryDisplay().workAreaSize;
+  //console.log(size)
+  let sX = size.width -800;
+  let sY = size.height - 600;
+  win = new BrowserWindow({width: 800, height: 600,x:sX,y:sY,icon: 'app.ico'});
   // win 加载静态资源
   win.loadURL(`file://${__dirname}/index.html`);
   // 创建一个平台图标
@@ -89,6 +99,9 @@ function createWindow() {
     win.focus()
   })
 
+  // let contents = win.webContents
+  // console.log(contents.getUserAgent())
+
   // var changeIcon = function(){
   //   var empty = nativeImage.createEmpty();
   //   tray.setImage(empty)
@@ -132,48 +145,38 @@ let undone = [];
 ipcMain.on('newPush',(event,msg)=>{
     let user = msg[0];
     let newpush = msg[1];
+    //console.log(newpush)
     if (Array.isArray(undone) && undone.length === 0) {
+       // console.log('undone ===0')
       // 当初始 总数组 长度为 0 时 将新推送的数组先进行排序
       newpush.sort(keysrt('date',true));
-      // console.log(1111)
       // 遍历新推送的数据 若某项 oper 值为 ‘delete’ 将其从数组中删除
       newpush.forEach((c,i)=>{
         c.oper === 'DELETE' && newpush.splice(i,1);
       });
-      // console.log('ishere' + newpush)
-      // console.log(2222)
+     // console.log(newpush)
       // 将处理好的数组返回给渲染进程
       event.returnValue = newpush;
     }else if(Array.isArray(undone) && undone.length > 0){
-      // console.log(3333)
-      // console.log(newpush)
-
+     // console.log('undone !== 0')
       newpush.forEach((c,i)=>{
-        // 遍历总数组 每一项单据
-        // console.log('ishere?')
+        // 遍历总数组 每一项单据   
         undone.forEach((v,j)=>{
-          // console.log(c.id +"==="+ v.id)
           // 未处理总数组的每项单据的 ID 与 新单据的 ID 不能相同
-         // c.id === v.id && [undone.splice(i,1)];
           if (v.id === c.id){
             undone.splice(j,1);
-            // console.log(000)
           } 
-          
         })
         if (c.oper === 'DELETE')  newpush.splice(i,1);
          //当信推送的信息中有 oper 为 ‘delete’ 的 便将其从数组中删除
       });
-      // console.log(undone)
       // 将查重之后的新单据数组拼接到总数组之后
       undone = undone.concat(newpush)
       undone.sort(keysrt('date',true));
       // 通知渲染进程 改变数组
-     // win.webContents.send('checkLists',undone);
+      //console.log(undone)
      event.returnValue = undone;
-     // console.log(4444)
     }
-
     // 初始化拼接字符串
     let str = '';
     // 遍历新推送的数据
@@ -208,7 +211,6 @@ ipcMain.on('newPush',(event,msg)=>{
         // console.log(e)
       }
     })();
-
     // 页面窗口闪动提示
     newpush.length > 0 && win.flashFrame(true);
     // 设置鼠标悬浮 右下角 Icon 时显示的提示文字
@@ -218,7 +220,6 @@ ipcMain.on('newPush',(event,msg)=>{
 ipcMain.on('FirstData',(event,msg)=>{
   // 当输入用户名之后将 undone 赋值为 最开始的未完成数组
   undone = msg;
-
   if (Array.isArray(undone) && undone.length >0) {
     event.returnValue =  undone.sort(keysrt('date',true));
     //console.log(undone.sort(keysrt('date',true)))
