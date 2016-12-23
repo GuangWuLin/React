@@ -1,5 +1,4 @@
 require('events').EventEmitter.prototype._maxListeners = 100;
-const React = require('react')
 const electron = require('electron');
 // Module to control application life.
 const {app} = electron;
@@ -9,8 +8,6 @@ const {Menu, Tray} = require('electron')
 const MenuItem = electron.MenuItem
 const path = require('path')
 const ipcMain = require('electron').ipcMain;
-
-
  
 // 保持全局的窗口对象，可以不显示，如果没有这个对象，窗口点击关闭的时候，js对象会被gc干掉
 let win;
@@ -52,11 +49,11 @@ function createWindow() {
   //console.log(size)
   let sX = size.width -800;
   let sY = size.height - 600;
-  win = new BrowserWindow({width: 800, height: 600,x:sX,y:sY,icon: 'app.ico'});
+  win = new BrowserWindow({resizable:false,width: 800, height: 600,x:sX,y:sY,icon: './assets/img/app.ico'});
   // win 加载静态资源
   win.loadURL(`file://${__dirname}/index.html`);
   // 创建一个平台图标
-  tray = new Tray(path.join(__dirname, 'app.ico'))
+  tray = new Tray(path.join(__dirname, './assets/img/app.ico'))
   // 图标 菜单
 
   const contextMenu = Menu.buildFromTemplate(
@@ -109,7 +106,7 @@ function createWindow() {
   // console.log(tray)
 
   // Open the DevTools.
-  win.webContents.openDevTools();
+  //win.webContents.openDevTools();
   // Emitted when the window is closed.
    win.on('closed', () => {
     win = null;
@@ -145,7 +142,7 @@ let undone = [];
 ipcMain.on('newPush',(event,msg)=>{
     let user = msg[0];
     let newpush = msg[1];
-    //console.log(newpush)
+    // console.log(undone.length)
     if (Array.isArray(undone) && undone.length === 0) {
        // console.log('undone ===0')
       // 当初始 总数组 长度为 0 时 将新推送的数组先进行排序
@@ -198,7 +195,7 @@ ipcMain.on('newPush',(event,msg)=>{
         if (Array.isArray(newpush) && newpush.length >0) {
           // 设置气泡提示信息
           tray.displayBalloon({
-            icon:'app.ico',
+            icon:'./assets/img/app.ico',
             title:` ${user} 您好,您有 ${newpush.length} 个新业务未处理.`,
             content:gen.next().value.join()
           });
@@ -220,11 +217,10 @@ ipcMain.on('newPush',(event,msg)=>{
 ipcMain.on('FirstData',(event,msg)=>{
   // 当输入用户名之后将 undone 赋值为 最开始的未完成数组
   undone = msg;
-  if (Array.isArray(undone) && undone.length >0) {
-    event.returnValue =  undone.sort(keysrt('date',true));
+  // console.log(typeof undone)
+  if (undone.length > 0) {
+    undone =  undone.sort(keysrt('date',true));
     //console.log(undone.sort(keysrt('date',true)))
-  }else if(Array.isArray(undone) && undone.length === 0){
-    event.returnValue = undone;
   }
 })
 // 当用户点击输入密码上面的头像时回到输入账号的页面

@@ -4,7 +4,7 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "package":"electron-packager . AssistantNews --platform=win32 --arch=x64 --out ./MyApp --version 1.4.10 --overwrite --icon=app.ico --ignore=node_modules/electron-* --ignore=node_modules/.bin --ignore=.git --ignore=dist --no-prune"
+    "package":"electron-packager . 消息助手 --platform=win32 --arch=x64 --out ./MyApp --version 1.4.10 --overwrite --icon=app.ico --ignore=node_modules/electron-* --ignore=node_modules/.bin --ignore=.git --ignore=dist --no-prune"
   },
   "devDependencies": {
     "electron-packager": "^8.4.0",
